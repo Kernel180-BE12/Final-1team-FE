@@ -68,8 +68,6 @@ const AgentPage = () => {
           <ArrowUpwardIcon />
         </IconButton>
       </Box>
-
-      {/* 기존에 있던 A/B 생성 버튼은 제거되었습니다. */}
     </Box>
   );
 };
