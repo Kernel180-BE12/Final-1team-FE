@@ -1,60 +1,87 @@
+// import React from 'react';
+// import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+// import LoginPage from './pages/LoginPage';
+// import AgentPage from './pages/AgentPage';
+// import SuggestionPage from './pages/SuggestionPage';
+// import MyTemplatePage from './pages/MyTemplatePage';
+
+// import Layout from './components/Layout';
+
+// export default function App() {
+//   const isLoggedIn = true;
+
+//   return (
+//     <Router>
+//       <Routes>
+//         {isLoggedIn ? (
+//           <Layout>
+//             <Routes>
+//               <Route path="/agent" element={<AgentPage />} />
+//               <Route path="/suggestion" element={<SuggestionPage />} />
+//               <Route path="/my-templates" element={<MyTemplatePage />} />
+//               <Route path="*" element={<Navigate to="/agent" />} />
+//             </Routes>
+//           </Layout>
+//         ) : (
+//           <>
+//             <Route path="/login" element={<LoginPage />} />
+//             <Route path="*" element={<Navigate to="/login" />} />
+//           </>
+//         )}
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
+import LoginPage from './pages/LoginPage';
+import AgentPage from './pages/AgentPage';
+import SuggestionPage from './pages/SuggestionPage';
+import MyTemplatePage from './pages/MyTemplatePage';
 
-/**
- * @description 우리 서비스의 첫 페이지 컴포넌트입니다.
- * @returns {React.ReactElement} LoginPage 컴포넌트
- */
-const LoginPage = () => {
-  return <div>로그인 페이지</div>;
+import Layout from './components/Layout';
+
+// 로그인 상태에 따라 Layout을 보여주거나 로그인 페이지로 보내는 컴포넌트
+const ProtectedLayout = ({ isLoggedIn }: { isLoggedIn: boolean }) => {
+  if (!isLoggedIn) {
+    // 로그인이 안 되어있으면 로그인 페이지로 이동
+    return <Navigate to="/login" />;
+  }
+
+  // 로그인이 되어있으면 Layout을 보여주고, 자식 라우트(페이지)를 Outlet에 렌더링
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 };
-
-/**
- * @description AI 에이전트에게 사용자가 첫 요청을 보내는 페이지 컴포넌트입니다.
- * @returns {React.ReactElement} AgentPage 컴포넌트
- */
-const AgentPage = () => {
-  return <div>AI 에이전트에게 요청하는 첫 페이지</div>;
-};
-
-/**
- * @description AI가 템플릿을 '추천'하거나 '생성'하는 핵심 작업 공간입니다.
- * @returns {React.ReactElement} SuggestionPage 컴포넌트
- */
-const SuggestionPage = () => {
-  return <div>AI가 템플릿을 추천/생성하는 페이지</div>;
-};
-
-/**
- * @description 저장된 모든 템플릿을 모아보는 보관함 페이지 입니다.
- * @returns {React.ReactElement} MyTemplatesPage 컴포넌트
- */
-const MyTemplatesPage = () => {
-  return <div>내 템플릿 보관함 페이지</div>;
-};
-
 
 export default function App() {
-  const isLoggedIn = true;
+  const isLoggedIn = true; // 실제 앱에서는 이 값이 동적으로 변해야 함
 
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        {isLoggedIn ? (
-          <>
-            <Route path="/agent" element={<AgentPage />} />
-            <Route path="/suggestion" element={<SuggestionPage />} />
-            <Route path="/my-templates" element={<MyTemplatesPage />} />
-            <Route path="*" element={<Navigate to="/agent" />} />
-          </>
-        ) : (
-          <>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="*" element={<Navigate to="/login" />} />
-          </>
-        )}
+        {/* 로그인 페이지 라우트 */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* 로그인해야만 접근 가능한 보호된 라우트들 */}
+        <Route element={<ProtectedLayout isLoggedIn={isLoggedIn} />}>
+          <Route path="/agent" element={<AgentPage />} />
+          <Route path="/suggestion" element={<SuggestionPage />} />
+          <Route path="/my-templates" element={<MyTemplatePage />} />
+        </Route>
+        
+        {/* 그 외 모든 경로는 로그인 상태에 따라 리다이렉트 */}
+        <Route 
+          path="*" 
+          element={<Navigate to={isLoggedIn ? "/agent" : "/login"} />} 
+        />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
