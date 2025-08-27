@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import AgentPage from './pages/AgentPage';
 import SuggestionPage from './pages/SuggestionPage';
 import MyTemplatePage from './pages/MyTemplatePage';
+import SignupPage from './pages/SignupPage';
 
 import Layout from './components/Layout';
 
@@ -31,6 +32,9 @@ export default function App() {
       <Routes>
         {/* 로그인 페이지 라우트 */}
         <Route path="/login" element={<LoginPage />} />
+        
+        {/* 회원가입 페이지 라우트 */}
+        <Route path="/signup" element={<SignupPage />} />
 
         {/* 로그인해야만 접근 가능한 보호된 라우트들 */}
         <Route element={<ProtectedLayout isLoggedIn={isLoggedIn} />}>
