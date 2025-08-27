@@ -9,6 +9,7 @@ import {
     IconButton,
 } from '@mui/material';
 import PasswordResetModal from '../components/PasswordResetModal';
+import { useNavigate } from 'react-router';
 
 /**
  * @description 로그인 페이지 컴포넌트
@@ -17,6 +18,7 @@ import PasswordResetModal from '../components/PasswordResetModal';
 const LoginPage = () => {
     // 모달의 열림/닫힘 상태를 관리하기 위한 state
     const [isModalOpen, setModalOpen] = useState(false);
+    const navigate = useNavigate();
 
     // 모달을 여는 함수
     const handleOpenModal = () => {
@@ -26,6 +28,10 @@ const LoginPage = () => {
     // 모달을 닫는 함수
     const handleCloseModal = () => {
         setModalOpen(false);
+    };
+
+    const handleSignupClick = () => {
+        navigate('/signup');
     };
 
     return (
@@ -122,7 +128,7 @@ const LoginPage = () => {
 
                 { /* 회원가입 및 비밀번호 재설정 버튼 영역 */}
                 <Stack direction="column" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
-                    <Button variant="outlined" sx={{ flex: 1 }}>회원가입</Button>
+                    <Button variant="outlined" sx={{ flex: 1 }} onClick={handleSignupClick}>회원가입</Button>
                     <Button variant="outlined" sx={{ flex: 1 }} onClick={handleOpenModal}>비밀번호 재설정</Button>
                 </Stack>
             </Box>
