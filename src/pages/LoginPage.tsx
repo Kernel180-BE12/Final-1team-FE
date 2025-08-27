@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -8,14 +8,28 @@ import {
     Stack,
     IconButton,
 } from '@mui/material';
+import PasswordResetModal from '../components/PasswordResetModal';
 
 /**
  * @description 로그인 페이지 컴포넌트
  * @returns {React.ReactElement} LoginPage 컴포넌트
  */
 const LoginPage = () => {
+    // 모달의 열림/닫힘 상태를 관리하기 위한 state
+    const [isModalOpen, setModalOpen] = useState(false);
+
+    // 모달을 여는 함수
+    const handleOpenModal = () => {
+        setModalOpen(true);
+    };
+
+    // 모달을 닫는 함수
+    const handleCloseModal = () => {
+        setModalOpen(false);
+    };
+
     return (
-        // 전체 화면을 차지하고, 로그인 폼을 중앙에 배치하기 위한 Box 컨테이너
+        <>
         <Box
             sx={{
                 display: 'flex',
@@ -109,10 +123,14 @@ const LoginPage = () => {
                 { /* 회원가입 및 비밀번호 재설정 버튼 영역 */}
                 <Stack direction="column" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
                     <Button variant="outlined" sx={{ flex: 1 }}>회원가입</Button>
-                    <Button variant="outlined" sx={{ flex: 1 }}>비밀번호 재설정</Button>
+                    <Button variant="outlined" sx={{ flex: 1 }} onClick={handleOpenModal}>비밀번호 재설정</Button>
                 </Stack>
             </Box>
         </Box>
+
+        {/* 모달 컴포넌트를 렌더링 */}
+        <PasswordResetModal open={isModalOpen} onClose={handleCloseModal} />
+        </>
     );
 };
 
