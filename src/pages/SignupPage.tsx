@@ -8,12 +8,22 @@ import {
     IconButton,
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // 카카오 아이콘 예시
+import { useNavigate } from 'react-router-dom';
 
 /**
  * @description 서비스의 회원가입 페이지 컴포넌트입니다.
  * @returns {React.ReactElement} SignupPage 컴포넌트
  */
 const SignupPage = () => {
+    const navigate = useNavigate();
+
+    /**
+     * @description 로그인 페이지로 이동하는 함수입니다.
+     */
+    const handleLoginClick = () => {
+        navigate('/login');
+    };
+
     return (
     // 전체 화면을 차지하고, 내용을 중앙에 배치하기 위한 Box 컨테이너입니다.
     <Box
@@ -124,7 +134,7 @@ const SignupPage = () => {
                 <Typography variant="body2" color="text.secondary">
                     자버 계정이 있으신가요?
                 </Typography>
-                <Button size="small">로그인</Button>
+                <Button size="small" onClick={handleLoginClick}>로그인</Button>
             </Stack>
             
             {/* 로고 */}
