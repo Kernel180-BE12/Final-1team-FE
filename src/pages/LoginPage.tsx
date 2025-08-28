@@ -7,31 +7,68 @@ import {
     Divider,
     Stack,
     IconButton,
+    InputAdornment,
 } from '@mui/material';
 import PasswordResetModal from '../components/PasswordResetModal';
 import { useNavigate } from 'react-router';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 /**
  * @description 로그인 페이지 컴포넌트
  * @returns {React.ReactElement} LoginPage 컴포넌트
  */
 const LoginPage = () => {
-    // 모달의 열림/닫힘 상태를 관리하기 위한 state
+    // --- 상태(State) 관리 ---
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     const [isModalOpen, setModalOpen] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
-    // 모달을 여는 함수
-    const handleOpenModal = () => {
-        setModalOpen(true);
+    // --- 함수(Handlers) ---
+    const handleOpenModal = () => setModalOpen(true);
+    const handleCloseModal = () => setModalOpen(false);
+    const handleSignupClick = () => navigate('/signup');
+    const handleClickShowPassword = () => setShowPassword((show) => !show);
+    const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
     };
 
-    // 모달을 닫는 함수
-    const handleCloseModal = () => {
-        setModalOpen(false);
-    };
+    const handleLogin = () => {
+        let isValid = true;
+        if (!email) {
+            setEmailError('이메일 또는 휴대전화를 입력해주세요.');
+            isValid = false;
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const phoneRegex = /^010-?([0-9]{4})-?([0-9]{4})$/;
 
-    const handleSignupClick = () => {
-        navigate('/signup');
+            if (!emailRegex.test(email) && !phoneRegex.test(email)) {
+                setEmailError('올바르지 않은 이메일 / 전화번호 형식입니다.');
+                isValid = false;
+            } else {
+                setEmailError('');
+            }
+        }
+
+        if (!password) {
+            setPasswordError('비밀번호를 입력해주세요.');
+            isValid = false;
+        }   else if (password.length < 8) {
+            setPasswordError('비밀번호는 8자 이상이어야 합니다.');
+            isValid = false;
+        }   else {
+            setPasswordError('');
+        }
+
+        if (isValid) {
+            console.log('로그인 시도:', { email, password });
+            alert('로그인 성공! (임시)');
+        }
+
     };
 
     return (
@@ -41,16 +78,16 @@ const LoginPage = () => {
                 display: 'flex',
                 justifyContent: 'center',
                 alianItem: 'center',
-                minHeight: '100vh', // 화면 전체 높이를 차지하도록 설정
+                minHeight: '100vh',
             }}
         >
             <Box
                 sx={{
                 width: '100%',
-                maxWidth: '400px', // 폼의 최대 너비는 유지합니다.
+                maxWidth: '400px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 2, // 요소들 사이의 간격
+                gap: 2,
                 }}
             >
                 {/* 로고 */}
@@ -60,17 +97,43 @@ const LoginPage = () => {
 
                 {/* 이메일/휴대전화 입력란 */}
                 <TextField
-                    fullWidth // 가로 너비를 100%로 설정
+                    fullWidth
                     label="이메일 / 휴대전화"
                     variant="outlined"
+                    sx={{ backgroundColor: 'white' }}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    error={!!emailError}
+                    helperText={emailError}
                 />
 
                 {/* 비밀번호 입력란 */}
                 <TextField
                     fullWidth
                     label="비밀번호"
-                    type="password"  // 입력 내용을 점으로 표시
+                    type={showPassword ? 'text' : 'password'}
                     variant="outlined"
+                    sx={{ backgroundColor: 'white' }}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    error={!!passwordError}
+                    helperText={passwordError}
+                    slotProps={{
+                        input: {
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="toggle password visibility"
+                                        onClick={handleClickShowPassword}
+                                        onMouseDown={handleMouseDownPassword}
+                                        edge="end"
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        },
+                    }}
                 />
 
                 {/* 로그인 버튼 */}
@@ -78,7 +141,8 @@ const LoginPage = () => {
                     fullWidth
                     variant="contained"
                     size="large"
-                    sx={{ mt: 1, py: 1.5 }}  // 위쪽 여백(mt), 수직 패딩(py)
+                    sx={{ mt: 1, py: 1.5 }}
+                    onClick={handleLogin}
                 >
                     로그인
                 </Button>
@@ -87,14 +151,12 @@ const LoginPage = () => {
                 <Divider sx={{ my: 2 }}>또는</Divider>
 
                 { /* 소셜 로그인 버튼 영역 */ }
-                { /* Stack 컴포넌트는 자식 요소들을 가로(row) 또는 세로(column)로 정렬할 때 편리함 */}
                 <Stack direction="row" spacing={2} justifyContent="center">
-                {/* Button을 IconButton으로 변경하고, 원형 스타일을 적용합니다. */}
                 <IconButton
                     sx={{
                     width: 56,
                     height: 56,
-                    backgroundColor: '#FEE500', // 카카오 노란색
+                    backgroundColor: '#FEE500',
                     '&:hover': { backgroundColor: '#f0d900' },
                     }}
                 >
@@ -116,7 +178,7 @@ const LoginPage = () => {
                     sx={{
                     width: 56,
                     height: 56,
-                    backgroundColor: '#03C75A', // 네이버 초록색
+                    backgroundColor: '#03C75A',
                     color: 'white',
                     '&:hover': { backgroundColor: '#02b350' },
                     }}
