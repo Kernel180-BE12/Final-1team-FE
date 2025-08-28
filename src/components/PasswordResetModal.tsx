@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -24,8 +24,43 @@ interface PasswordResetModalProps {
  * @returns {React.ReactElement} PasswordResetModal 컴포넌트
  */
 const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
+  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [error, setError] = useState('');
+
+  /**
+   * @description '메시지 전송' 버튼 클릭 시 호출될 함수
+   */
+  const handleSend = () => {
+    // 유효성 검사
+    if (!emailOrPhone) {
+      setError('이메일 또는 휴대전화를 입력해주세요.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^010-?([0-9]{4})-?([0-9]{4})$/;
+    if (!emailRegex.test(emailOrPhone) && !phoneRegex.test(emailOrPhone)) {
+        setError('올바르지 않은 이메일 또는 전화번호 형식입니다.');
+        return;
+    }
+
+    // 유효성 검사 통과 시
+    setError('');  // 에러 메시지를 초기화
+    alert(`입력하신 ${emailOrPhone}(으)로 비밀번호 재설정 메시지를 보냈습니다. (임시)`);
+    onClose();
+  };
+
+  /**
+   * @description 모달이 닫힐 때 입력값과 에러 메시지를 초기화하는 함수
+   */
+  const handleClose = () => {
+    setEmailOrPhone('');
+    setError('');
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ m: 0, p: 2, fontWeight: 'bold' }}>
         비밀번호 재설정
         <IconButton
@@ -54,10 +89,14 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
           fullWidth
           variant="outlined"
           sx={{ mt: 2 }}
+          value={emailOrPhone}
+          onChange={(e) => setEmailOrPhone(e.target.value)}
+          error={!!error}
+          helperText={error}
         />
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={onClose} variant="contained" fullWidth>
+        <Button onClick={handleSend} variant="contained" fullWidth>
           비밀번호 재설정 메시지 전송
         </Button>
       </DialogActions>
