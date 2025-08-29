@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import LoginPage from './pages/LoginPage';
 import AgentPage from './pages/AgentPage';
 import SuggestionPage from './pages/SuggestionPage';
-import MyTemplatePage from './pages/MyTemplatePage';
+import MyTemplatesPage from './pages/MyTemplatesPage';
 import SignupPage from './pages/SignupPage';
 
 import Layout from './components/Layout';
@@ -40,7 +40,7 @@ export default function App() {
         <Route element={<ProtectedLayout isLoggedIn={isLoggedIn} />}>
           <Route path="/agent" element={<AgentPage />} />
           <Route path="/suggestion" element={<SuggestionPage />} />
-          <Route path="/my-templates" element={<MyTemplatePage />} />
+          <Route path="/my-templates" element={<MyTemplatesPage />} />
         </Route>
         
         {/* 그 외 모든 경로는 로그인 상태에 따라 리다이렉트 */}
