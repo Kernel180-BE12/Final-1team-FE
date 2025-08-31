@@ -49,9 +49,9 @@ const MyTemplatePage = () => {
                 <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
                     내가 만든 템플릿
                 </Typography>
-                <Button variant="contained" size="large">
+                {/* <Button variant="contained" size="large">
                     새 템플릿 만들기
-                </Button>
+                </Button> */}
             </Box>
 
             {/* 반응형 */}
