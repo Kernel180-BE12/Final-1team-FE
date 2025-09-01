@@ -33,9 +33,9 @@ const ContactsPage = () => {
     const [isSubSidebarOpen, setSubSidebarOpen] = useState(true);
 
     const contacts = [
-    { id: 1, name: '우리 회사 마케팅팀', tag: '바로가기 >', nikName: '효주', affiliation: '' },
-    { id: 2, name: '사이드 프로젝트: 댕댕이 산책 앱', tag: '바로가기 >', nikName: '', affiliation: '' },
-    { id: 3, name: '개인 워크스페이스', tag: '바로가기 >', nikName: '', affiliation: '' },
+    { id: 1, name: '우리 회사 마케팅팀', documents: ['바로가기 >'], tag: '', nikName: '홍길동대리', affiliation: '', phone: '010-1234-5678', email: 'asdf123@example.com' },
+    { id: 2, name: '사이드 프로젝트: 댕댕이 산책 앱', documents: ['바로가기 >'], tag: '', nikName: '', affiliation: '', phone: '010-2345-6789', email: 'qwerty12@example.com' },
+    { id: 3, name: '개인 워크스페이스', documents: ['바로가기 >'] , tag: '', nikName: '', affiliation: '', phone: '010-3456-7890', email: 'zxcv1@example.com'  },
     ];
 
     return (
@@ -112,23 +112,27 @@ const ContactsPage = () => {
                     <Checkbox />
                 </TableCell>
                 <TableCell>이름</TableCell>
-                <TableCell>개별 운임</TableCell>
+                <TableCell>개별 문서함</TableCell>
                 <TableCell>태그</TableCell>
                 <TableCell>닉네임</TableCell>
                 <TableCell>소속</TableCell>
+                <TableCell>휴대전화</TableCell>
+                <TableCell>이메일</TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
                 {contacts.map((contact) => (
                 <TableRow key={contact.id}>
                     <TableCell padding="checkbox">
-                    <Checkbox />
+                        <Checkbox />
                     </TableCell>
                     <TableCell>{contact.name}</TableCell>
-                    <TableCell />
+                    <TableCell>{contact.documents}</TableCell>
                     <TableCell>{contact.tag}</TableCell>
                     <TableCell>{contact.nikName}</TableCell>
                     <TableCell>{contact.affiliation}</TableCell>
+                    <TableCell>{contact.phone}</TableCell>
+                    <TableCell>{contact.email}</TableCell>
                 </TableRow>
                 ))}
             </TableBody>
