@@ -21,6 +21,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import AccountBoxIcon from '@mui/icons-material/AccountBox'; 
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CreateSpaceModal from '../components/CreateSpaceModal';
 
 import { SUB_SIDEBAR_WIDTH } from '../styles/layoutConstants';
 
@@ -44,8 +45,10 @@ const SpacesPage = () => {
   const [isSubSidebarOpen, setSubSidebarOpen] = useState(true);
   // [추가] 현재 선택된 서브 메뉴를 관리하는 상태를 만듭니다. 초기값은 '전체 스페이스'입니다.
   const [selectedSubMenu, setSelectedSubMenu] = useState(subMenuItems[0].text);
+  const [isModalOpen, setModalOpen] = useState(false);
 
   return (
+    <>
     <Box sx={{ display: 'flex' }}>
       {/* 1. 왼쪽 서브 사이드바 */}
       <Paper 
@@ -87,13 +90,11 @@ const SpacesPage = () => {
 
       {/* 2. 오른쪽 메인 콘텐츠 */}
       <Box sx={{ flexGrow: 1, pl: 3 }}>
-        {/* [수정] 헤더 영역에 동적인 소제목과 구분선을 추가합니다. */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
           <IconButton onClick={() => setSubSidebarOpen(!isSubSidebarOpen)}>
             {isSubSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
 
-          {/* [추가] 선택된 서브 메뉴의 이름을 소제목으로 보여줍니다. */}
           <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
             {selectedSubMenu}
           </Typography>
@@ -120,7 +121,7 @@ const SpacesPage = () => {
             </IconButton>
           </Paper>
           
-          <Button variant="contained" startIcon={<AddIcon />}>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
             스페이스 추가하기
           </Button>
         </Box>
@@ -145,6 +146,9 @@ const SpacesPage = () => {
         </List>
       </Box>
     </Box>
+
+    <CreateSpaceModal open={isModalOpen} onClose={() => setModalOpen(false)} />
+    </>
   );
 };
 
