@@ -9,7 +9,7 @@ import SignupPage from './pages/SignupPage';
 import AgentPage from './pages/AgentPage';
 import SuggestionPage from './pages/SuggestionPage';
 import MyTemplatesPage from './pages/MyTemplatesPage';
-// import SpacesPage from './pages/SpacesPage';
+import SpacesPage from './pages/SpacesPage';
 import ContactsPage from './pages/ContactsPage';
 
 export default function App() {
@@ -27,7 +27,7 @@ export default function App() {
         {/* 그룹 2: Dashboard 구역 (로그인 후) */}
         {isLoggedIn && (
           <Route element={<DashboardLayout />}>
-            {/* <Route path="/spaces" element={<SpacesPage />} /> */}
+            <Route path="/spaces" element={<SpacesPage />} />
             <Route path="/my-templates" element={<MyTemplatesPage />} />
             <Route path="/suggestion" element={<SuggestionPage />} />
             <Route path="/contacts" element={<ContactsPage />} />

@@ -23,7 +23,8 @@ import GroupIcon from '@mui/icons-material/Group';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
-const subSidebarWidth = 240;
+import { SUB_SIDEBAR_WIDTH } from '../styles/layoutConstants';
+
 
 /**
  * @description 사용자가 속한 스페이스 목록을 보여주는 페이지 컴포넌트입니다.
@@ -44,8 +45,8 @@ const ContactsPage = () => {
         <Paper
         variant="outlined"
         sx={{
-            width: isSubSidebarOpen ? subSidebarWidth : 0,
-            minWidth: isSubSidebarOpen ? subSidebarWidth : 0,
+            width: isSubSidebarOpen ? SUB_SIDEBAR_WIDTH : 0,
+            minWidth: isSubSidebarOpen ? SUB_SIDEBAR_WIDTH : 0,
             borderColor: '#e0e0e0',
             alignSelf: 'flex-start',
             transition: (theme) => theme.transitions.create(['width', 'min-width'], {
@@ -56,7 +57,7 @@ const ContactsPage = () => {
             overflow: 'hidden',
         }}
         >
-        <Box sx={{ width: subSidebarWidth }}>
+        <Box sx={{ width: SUB_SIDEBAR_WIDTH }}>
             <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 연락처
