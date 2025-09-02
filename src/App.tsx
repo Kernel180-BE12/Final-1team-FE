@@ -9,8 +9,8 @@ import SignupPage from './pages/SignupPage';
 import AgentPage from './pages/AgentPage';
 import SuggestionPage from './pages/SuggestionPage';
 import MyTemplatesPage from './pages/MyTemplatesPage';
-import SpacesPage from './pages/SpacesPage';
 import ContactsPage from './pages/ContactsPage';
+import SpacesPage from './pages/SpacesPage'
 
 export default function App() {
   const isLoggedIn = true; // 실제 앱에서는 이 값이 동적으로 변해야 합니다.
@@ -27,10 +27,10 @@ export default function App() {
         {/* 그룹 2: Dashboard 구역 (로그인 후) */}
         {isLoggedIn && (
           <Route element={<DashboardLayout />}>
-            <Route path="/spaces" element={<SpacesPage />} />
             <Route path="/my-templates" element={<MyTemplatesPage />} />
             <Route path="/suggestion" element={<SuggestionPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
+            <Route path="/spaces" element={<SpacesPage />} />
             {/* 추가적으로 /settings 같은 페이지를 여기에 넣을 수 있습니다. */}
           </Route>
         )}

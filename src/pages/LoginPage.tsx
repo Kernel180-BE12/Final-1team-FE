@@ -9,7 +9,7 @@ import {
     IconButton,
     InputAdornment,
 } from '@mui/material';
-import PasswordResetModal from '../components/PasswordResetModal';
+import PasswordResetModal from '../components/modals/PasswordResetModal';
 import { useNavigate } from 'react-router';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
