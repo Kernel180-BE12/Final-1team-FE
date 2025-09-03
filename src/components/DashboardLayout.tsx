@@ -72,7 +72,7 @@ const DashboardLayout = () => {
       </Drawer>
 
       {/* 메인 콘텐츠 영역 */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f9fafb', minHeight: '100vh' }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f9fafb', minHeight: '100%' }}>
         {/* 이 Outlet 부분에 스페이스, 내 템플릿 등 로그인 후 페이지들이 렌더링됩니다. */}
         <Outlet />
       </Box>
