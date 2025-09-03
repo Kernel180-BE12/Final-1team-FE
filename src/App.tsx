@@ -8,7 +8,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AgentPage from './pages/AgentPage';
 import SuggestionPage from './pages/SuggestionPage';
-import MyTemplatePage from './pages/MyTemplatePage';
+import MyTemplatesPage from './pages/MyTemplatesPage';
 // import SpacesPage from './pages/SpacesPage';
 import ContactsPage from './pages/ContactsPage';
 
@@ -28,7 +28,7 @@ export default function App() {
         {isLoggedIn && (
           <Route element={<DashboardLayout />}>
             {/* <Route path="/spaces" element={<SpacesPage />} /> */}
-            <Route path="/my-templates" element={<MyTemplatePage />} />
+            <Route path="/my-templates" element={<MyTemplatesPage />} />
             <Route path="/suggestion" element={<SuggestionPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
             {/* 추가적으로 /settings 같은 페이지를 여기에 넣을 수 있습니다. */}
