@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SignupModal from '../components/SignupModal';
+import SignupModal from '../components/modals/SignupModal';
 import {
     Box,
     Typography,
