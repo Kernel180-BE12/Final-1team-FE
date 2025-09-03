@@ -21,7 +21,7 @@ const subMenuItems = [
 
 const SpacesPage = () => {
   const [isSubSidebarOpen, setSubSidebarOpen] = useState(true);
-  const [selectedMenuKey, setSelectedMenuKey] = useState('invites');
+  const [selectedMenuKey, setSelectedMenuKey] = useState('all-spaces');
   const [isModalOpen, setModalOpen] = useState(false);
 
   const renderMainContent = () => {
