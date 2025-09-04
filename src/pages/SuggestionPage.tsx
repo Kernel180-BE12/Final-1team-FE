@@ -2,10 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, CircularProgress, List, ListItem, ListItemButton, ListItemText, ThemeProvider, createTheme, Divider, Chip, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 // --- 타입 정의 ---
 type TemplateStyle = '기본형' | '이미지형' | '아이템리스트형';
@@ -17,16 +15,33 @@ interface StructuredTemplate {
     buttons?: [string, string][] | null;
 }
 
+// --- 프런트엔드 예시 템플릿 데이터 ---
+const exampleTemplates: Record<TemplateStyle, StructuredTemplate> = {
+    '기본형': {
+        title: '[기본형] 템플릿 제목',
+        body: '여기에 기본형 템플릿의 본문 내용이 들어갑니다. 고객에게 전달할 핵심 정보를 명확하게 작성하세요.',
+        buttons: [['WL', '웹사이트 바로가기']],
+    },
+    '이미지형': {
+        title: '[이미지형] 시선을 사로잡는 제목',
+        body: '이미지와 함께 전달할 메시지를 작성합니다. 이미지는 상품, 이벤트, 브랜드 로고 등 다양하게 활용될 수 있습니다.',
+        image_url: 'https://via.placeholder.com/300x150.png?text=Example+Image',
+        buttons: [['WL', '자세히 보기']],
+    },
+    '아이템리스트형': {
+        title: '[아이템 리스트] 주문내역 안내',
+        body: `#{고객명}님의 주문 내역입니다.\n\n- 상품명: #{상품명}\n- 결제금액: #{금액}\n- 주문일시: #{주문일시}\n\n감사합니다.`,
+        buttons: [['WL', '주문 상세 보기'], ['DS', '배송 조회']],
+    },
+};
+
+
 interface BotResponse {
     id: number;
     type: 'bot' | 'user';
     content: string;
     options?: string[];
-    template?: string; // 기존 템플릿 문자열 (사용 안 할 예정)
-    html_preview?: string; // 기존 HTML 미리보기 (사용 안 할 예정)
-    html_previews?: string[]; // 기존 HTML 미리보기 리스트 (사용 안 할 예정)
-    templates?: string[]; // 기존 템플릿 리스트 (사용 안 할 예정)
-    structured_template?: StructuredTemplate; // 새로 추가된 구조화된 템플릿
+    structured_template?: StructuredTemplate;
     timestamp: string;
 }
 
@@ -73,34 +88,6 @@ const ButtonContainer = styled(Box)(({ theme }) => ({
     marginTop: 'auto',
 }));
 
-const ImageTypeIcon = styled(Box)({
-    fontSize: '64px',
-    textAlign: 'center',
-    margin: '20px 0',
-});
-
-const BasicTypeListItem = styled(ListItem)({
-    padding: '4px 0',
-    alignItems: 'flex-start',
-});
-
-const ItemListHeader = styled(Box)({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '16px',
-});
-
-const ItemListTitle = styled(Typography)({
-    fontSize: '24px',
-    fontWeight: 'bold',
-});
-
-const ItemListSubTitle = styled(Typography)({
-    fontSize: '15px',
-    color: '#666',
-});
-
 const Placeholder = styled('span')({
     color: '#007bff',
     fontWeight: 'bold',
@@ -119,8 +106,7 @@ const EmptyChatPlaceholder = () => (
             무엇을 도와드릴까요?
         </Typography>
         <Typography sx={{ mb: 3, maxWidth: '600px', color: '#4B5563' }}>
-            아래 입력창에 원하는 알림톡 내용을 자유롭게 작성해보세요.
-            AI가 내용을 분석하여 최적의 템플릿을 추천해 드립니다.
+            아래 입력창에 원하는 알림톡 내용을 자유롭게 작성해보세요.\nAI가 내용을 분석하여 최적의 템플릿을 추천해 드립니다.
         </Typography>
         <Paper
             variant="outlined"
@@ -157,7 +143,6 @@ const renderTemplateWithPlaceholders = (text: string) => {
 
 interface TemplatePreviewProps {
     structuredTemplate: StructuredTemplate | null;
-    style?: TemplateStyle; // 이 prop은 더 이상 사용되지 않을 수 있지만, 기존 코드 호환성을 위해 남겨둠
 }
 
 const TemplatePreview = ({ structuredTemplate }: TemplatePreviewProps) => {
@@ -169,8 +154,6 @@ const TemplatePreview = ({ structuredTemplate }: TemplatePreviewProps) => {
 
     const renderBodyContent = () => {
         const lines = body.split('\n');
-        // 이 부분은 백엔드에서 어떤 형식으로 body를 주느냐에 따라 달라질 수 있습니다.
-        // 현재는 단순히 줄바꿈을 <br> 태그로 변환하고 플레이스홀더를 렌더링합니다.
         return lines.map((line, index) => (
             <Typography key={index} sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                 {renderTemplateWithPlaceholders(line)}
@@ -184,7 +167,7 @@ const TemplatePreview = ({ structuredTemplate }: TemplatePreviewProps) => {
             <Content>
                 {image_url && (
                     <Box sx={{ mb: 2, textAlign: 'center' }}>
-                        <img src={image_url.replace("#{", "https://via.placeholder.com/300x150.png?text=").replace("}", "")} alt="Template Image" style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }} />
+                        <img src={image_url} alt="Template Image" style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }} />
                     </Box>
                 )}
                 <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
@@ -218,6 +201,9 @@ export default function SuggestionPage() {
     const [livePreviewStructuredTemplate, setLivePreviewStructuredTemplate] = useState<StructuredTemplate | null>(null);
     const [selectedOption, setSelectedOption] = useState<string>('');
     const chatEndRef = useRef<HTMLDivElement>(null);
+
+    // 템플릿 종류 선택 버튼의 활성화 상태를 관리하는 state
+    const [selectedTemplateType, setSelectedTemplateType] = useState<TemplateStyle | null>(null);
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -253,22 +239,18 @@ export default function SuggestionPage() {
                 type: 'bot',
                 content: data.response,
                 options: data.options,
-                template: data.template, // 기존 필드 유지 (사용 안 함)
-                html_preview: data.html_preview, // 기존 필드 유지 (사용 안 함)
-                html_previews: data.html_previews, // 기존 필드 유지 (사용 안 함)
-                templates: data.templates, // 기존 필드 유지 (사용 안 함)
-                structured_template: data.structured_template, // 새로 추가된 필드
+                structured_template: data.structured_template,
                 timestamp: getCurrentTime(),
             };
 
             setConversation((prev) => [...prev, botMessage]);
             setSessionState(data.state);
 
-            // 미리보기 로직 업데이트
+            // AI 응답으로 structured_template가 오면 미리보기 업데이트
+            // 이전에 선택된 템플릿 종류가 있다면 초기화
             if (botMessage.structured_template) {
                 setLivePreviewStructuredTemplate(botMessage.structured_template);
-            } else {
-                setLivePreviewStructuredTemplate(null);
+                setSelectedTemplateType(null);
             }
 
             // 자동 진행 로직
@@ -302,19 +284,25 @@ export default function SuggestionPage() {
 
         setInputValue('');
         setSelectedOption('');
+        // 사용자 메시지 전송 시 미리보기 초기화 (AI 응답 대기)
+        setLivePreviewStructuredTemplate(null);
+        setSelectedTemplateType(null);
         await callChatApi(message, sessionState);
     };
 
     const handleOptionClick = (option: string, message: BotResponse) => {
         setSelectedOption(option);
-        // 옵션 선택 시 structured_template 미리보기가 있다면 업데이트
         if (message.options && message.structured_template) {
-            // 백엔드에서 옵션에 따라 다른 structured_template를 줄 경우를 대비
-            // 현재는 단일 structured_template를 가정하고 있으므로, 이 부분은 필요에 따라 수정
             setLivePreviewStructuredTemplate(message.structured_template);
-        } else {
-            setLivePreviewStructuredTemplate(null);
+            setSelectedTemplateType(null); // 옵션 선택 시 타입 선택 초기화
         }
+    };
+
+    // --- 템플릿 타입 버튼 클릭 핸들러 ---
+    const handleTemplateTypeClick = (templateType: TemplateStyle) => {
+        const selectedTemplate = exampleTemplates[templateType];
+        setLivePreviewStructuredTemplate(selectedTemplate);
+        setSelectedTemplateType(templateType); // 선택된 타입 저장
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -343,6 +331,23 @@ export default function SuggestionPage() {
                     borderRadius: '12px',
                     overflow: 'hidden',
                 }}>
+                    {/* --- 템플릿 종류 선택 UI --- */}
+                    <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0', bgcolor: '#f9f9f9' }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: 'text.secondary' }}>템플릿 종류 선택</Typography>
+                        <Stack direction="row" spacing={1}>
+                            {(Object.keys(exampleTemplates) as TemplateStyle[]).map((type) => (
+                                <Button
+                                    key={type}
+                                    variant={selectedTemplateType === type ? "contained" : "outlined"}
+                                    size="small"
+                                    onClick={() => handleTemplateTypeClick(type)}
+                                >
+                                    {type}
+                                </Button>
+                            ))}
+                        </Stack>
+                    </Box>
+
                     <Box sx={{
                         flexGrow: 1,
                         overflowY: 'auto',
@@ -407,97 +412,57 @@ export default function SuggestionPage() {
                                                                         borderRadius: '12px',
                                                                         borderColor: '#e0e0e0',
                                                                         bgcolor: selectedOption === opt ? '#4dabf7' : 'white',
-                                                                        color: selectedOption === opt ? 'white' : 'black',
+                                                                        color: selectedOption === opt ? 'white' : '#333',
                                                                         '&:hover': {
-                                                                            borderColor: '#c0c0c0',
-                                                                            bgcolor: selectedOption === opt ? '#3c9ce0' : '#f5f5f5',
+                                                                            bgcolor: selectedOption === opt ? '#379de5' : '#f5f5f5',
                                                                         },
-                                                                        p: 1.5,
-                                                                        textTransform: 'none',
                                                                     }}
                                                                 >
                                                                     {opt}
                                                                 </Button>
                                                             ))}
                                                         </Stack>
-                                                        <Button
-                                                            variant="contained"
-                                                            fullWidth
-                                                            sx={{
-                                                                mt: 1.5,
-                                                                bgcolor: '#f0f0f0',
-                                                                color: selectedOption ? 'black' : '#aaa',
-                                                                '&:hover': { bgcolor: '#e0e0e0' },
-                                                            }}
-                                                            onClick={() => handleSendMessage(selectedOption)}
-                                                            disabled={!selectedOption}
-                                                        >
-                                                            {msg.content.includes("AI가 자동으로 수정하겠습니다.") ? "자동 수정 진행 중..." : "선택 완료"}
-                                                        </Button>
-                                                    </Box>
-                                                )}
-
-                                                {/* 완성된 템플릿 표시 (기존 로직 유지) */}
-                                                {msg.template && (
-                                                    <Box sx={{
-                                                        mt: 2,
-                                                        p: 2,
-                                                        bgcolor: '#e8f5e8',
-                                                        borderRadius: '8px',
-                                                    }}>
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                                                            ✅ 완성된 템플릿:
-                                                        </Typography>
-                                                        <Typography variant="body2" sx={{
-                                                            whiteSpace: 'pre-wrap',
-                                                            fontFamily: 'monospace',
-                                                        }}>
-                                                            {msg.template}
-                                                        </Typography>
                                                     </Box>
                                                 )}
                                             </Paper>
-                                            <Typography variant="caption" sx={{ color: '#666' }}>
+                                            <Typography variant="caption" sx={{ color: '#616161' }}>
                                                 {msg.timestamp}
                                             </Typography>
                                         </Stack>
                                     </Stack>
                                 ))}
-                                {isLoading && (
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                                        <CircularProgress size={24} />
-                                    </Box>
-                                )}
                                 <div ref={chatEndRef} />
                             </Stack>
                         )}
                     </Box>
-
-                    {/* 입력 영역 */}
+                    {/* 메시지 입력창 */}
                     <Paper
                         component="form"
                         onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputValue); }}
                         elevation={0}
                         sx={{
-                            p: 1,
+                            p: '8px 12px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 1,
                             borderTop: '1px solid #e0e0e0',
+                            borderRadius: 0,
                         }}
                     >
                         <TextField
                             fullWidth
+                            multiline
+                            maxRows={5}
                             variant="standard"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyPress}
-                            placeholder="메시지를 입력하세요"
-                            multiline
-                            minRows={1}
+                            onKeyPress={handleKeyPress}
+                            placeholder={isLoading ? "AI가 답변을 생성중입니다..." : "메시지를 입력하세요..."}
                             disabled={isLoading}
-                            sx={{
-                                "& .MuiInput-underline:before, & .MuiInput-underline:after, & .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                            InputProps={{
+                                disableUnderline: true,
+                                sx: {
+                                    fontSize: '15px',
+                                    lineHeight: 1.6,
                                     borderBottom: 'none',
                                 },
                                 px: 1.5,
@@ -560,4 +525,5 @@ export default function SuggestionPage() {
         </ThemeProvider>
     );
 }
+
 
