@@ -82,7 +82,7 @@ const LoginPage = () => {
   
   const handleOpenModal = () => setModalOpen(true);
   const handleCloseModal = () => setModalOpen(false);
-  const handleSignupClick = () => navigate('/signup');
+  const handleSignupClick = () => navigate('/register');
 
   return (
     <>
