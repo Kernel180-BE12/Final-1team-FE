@@ -27,7 +27,7 @@ const PublicLayout = () => {
             sx={{ flexGrow: 1, fontWeight: 'bold', cursor: 'pointer' }}
             onClick={() => navigate('/')}
           >
-            JOBER
+            AI 템플릿 만들기
           </Typography>
           <Button color="inherit" onClick={() => navigate('/login')}>
             로그인
