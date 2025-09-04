@@ -5,7 +5,7 @@ import PublicLayout from './components/PublicLayout';
 import DashboardLayout from './components/DashboardLayout';
 
 import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
+import RegisterPage from './pages/RegisterPage';
 import AgentPage from './pages/AgentPage';
 import SuggestionPage from './pages/SuggestionPage';
 import MyTemplatesPage from './pages/MyTemplatesPage';
@@ -37,7 +37,7 @@ export default function App() {
         
         {/* 그룹 3: 레이아웃이 없는 독립된 페이지 */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         {/* <Route path="/agent" element={<AgentPage />} /> AgentPage는 레이아웃 없음 */}
 
 
