@@ -134,7 +134,7 @@ const RegisterPage = () => {
                                 '&:hover': { transform: 'scale(1.03) translateY(-2px)' },
                             }}
                         >
-                            이메일로 가입하기
+                            회원가입 하기
                         </Button>
 
                         <Divider sx={{ width: '100%', my: 1 }} />
