@@ -10,6 +10,7 @@ import {
   IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import axios from 'axios';
 
 interface PasswordResetModalProps {
   open: boolean;
@@ -18,44 +19,53 @@ interface PasswordResetModalProps {
 
 /**
  * @description 비밀번호 재설정 팝업(모달) 컴포넌트입니다.
- * @param {object} props - React 컴포넌트 props
- * @param {boolean} props.open - 모달의 열림/닫힘 상태
- * @param {() => void} props.onClose - 모달을 닫을 때 호출되는 함수
- * @returns {React.ReactElement} PasswordResetModal 컴포넌트
+ * 회원가입 시 등록한 이메일로 비밀번호 재설정을 요청합니다.
  */
 const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
-  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   /**
-   * @description '메시지 전송' 버튼 클릭 시 호출될 함수
+   * @description '비밀번호 재설정 요청' 버튼 클릭 시 호출
    */
-  const handleSend = () => {
+  const handleSend = async () => {
     // 유효성 검사
-    if (!emailOrPhone) {
-      setError('이메일 또는 휴대전화를 입력해주세요.');
+    if (!email) {
+      setError('이메일을 입력해주세요.');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^010-?([0-9]{4})-?([0-9]{4})$/;
-    if (!emailRegex.test(emailOrPhone) && !phoneRegex.test(emailOrPhone)) {
-        setError('올바르지 않은 이메일 또는 전화번호 형식입니다.');
-        return;
+    if (!emailRegex.test(email)) {
+      setError('올바른 이메일 형식을 입력해주세요.');
+      return;
     }
 
-    // 유효성 검사 통과 시
-    setError('');  // 에러 메시지를 초기화
-    alert(`입력하신 ${emailOrPhone}(으)로 비밀번호 재설정 메시지를 보냈습니다. (임시)`);
-    onClose();
+    try {
+      // 서버에 비밀번호 재설정 요청 API 호출
+      const response = await axios.post('/api/user/reset-password', { email });
+
+      if (response.status === 200) {
+        setError('');
+        setSuccessMessage(`입력하신 ${email} 주소로 비밀번호 재설정 메일을 보냈습니다.`);
+        setTimeout(() => {
+          handleClose();
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('비밀번호 재설정 요청 실패:', err);
+      setError('해당 이메일로 가입된 계정을 찾을 수 없습니다.');
+    }
   };
 
   /**
-   * @description 모달이 닫힐 때 입력값과 에러 메시지를 초기화하는 함수
+   * @description 모달이 닫힐 때 입력값/에러 초기화
    */
   const handleClose = () => {
-    setEmailOrPhone('');
+    setEmail('');
     setError('');
+    setSuccessMessage('');
     onClose();
   };
 
@@ -65,7 +75,7 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
         비밀번호 재설정
         <IconButton
           aria-label="close"
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             position: 'absolute',
             right: 8,
@@ -78,26 +88,27 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
       </DialogTitle>
       <DialogContent dividers>
         <Typography gutterBottom>
-          로그인 시 사용하는 이메일 또는 전화번호를 입력해주세요. 입력하신 이메일 또는 휴대전화로 비밀번호 재설정 링크가 전송됩니다.
+          회원가입 시 등록한 이메일 주소를 입력해주세요. 입력하신 이메일로 비밀번호 재설정 링크가 전송됩니다.
         </Typography>
         <TextField
           autoFocus
           margin="dense"
-          id="emailOrPhone"
-          label="이메일 / 휴대전화"
-          type="text"
+          id="email"
+          label="이메일"
+          type="email"
           fullWidth
           variant="outlined"
           sx={{ mt: 2 }}
-          value={emailOrPhone}
-          onChange={(e) => setEmailOrPhone(e.target.value)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           error={!!error}
-          helperText={error}
+          helperText={error || successMessage}
+          FormHelperTextProps={{ sx: { color: successMessage ? 'green' : 'red' } }}
         />
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
         <Button onClick={handleSend} variant="contained" fullWidth>
-          비밀번호 재설정 메시지 전송
+          비밀번호 재설정 요청
         </Button>
       </DialogActions>
     </Dialog>
