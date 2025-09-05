@@ -36,7 +36,6 @@ export default function App() {
         {/* 그룹 3: 레이아웃이 없는 독립된 페이지 */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        {/* <Route path="/agent" element={<AgentPage />} /> AgentPage는 레이아웃 없음 */}
 
         {/* 길 잃은 사용자 처리 */}
         <Route 
