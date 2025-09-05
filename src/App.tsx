@@ -40,7 +40,7 @@ export default function App() {
         {/* 길 잃은 사용자 처리 */}
         <Route 
           path="*" 
-          element={<Navigate to="/spaces" />}
+          element={<Navigate to="/agent" />}
         />
       </Routes>
     </BrowserRouter>
