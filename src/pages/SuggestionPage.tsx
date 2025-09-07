@@ -30,22 +30,92 @@ const Placeholder = styled('span' )({ color: '#3b82f6', fontWeight: 'bold', back
 const customTheme = createTheme({ typography: { fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif", }, palette: { primary: { main: '#3b82f6', }, secondary: { main: '#64748b', }, background: { default: 'transparent', paper: 'rgba(255, 255, 255, 0.6)', }, text: { primary: '#0f172a', secondary: '#475569', } }, components: { MuiPaper: { styleOverrides: { root: { backdropFilter: 'blur(16px) saturate(180%)', border: '1px solid rgba(255, 255, 255, 0.2)', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)', borderRadius: '24px', background: 'rgba(255, 255, 255, 0.6)', } } }, MuiButton: { styleOverrides: { root: { textTransform: 'none', borderRadius: '12px', fontWeight: 600, boxShadow: 'none', transition: 'transform 0.1s ease-in-out', '&:active': { transform: 'scale(0.98)', } }, contained: { backgroundColor: '#3b82f6', '&:hover': { backgroundColor: '#2563eb', } }, outlined: { borderColor: 'rgba(255, 255, 255, 0.5)', color: '#334155', backgroundColor: 'rgba(255, 255, 255, 0.3)', '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.5)', borderColor: 'rgba(255, 255, 255, 0.8)', } } } }, MuiAvatar: { styleOverrides: { root: { backgroundColor: 'rgba(255, 255, 255, 0.8)', color: '#1e293b', } } } } });
 const InteractiveCard = styled(Paper)({});
 
-// --- 유틸리티 및 헬퍼 컴포넌트 (변경 없음) ---
+// --- 유틸리티 및 헬퍼 컴포넌트 ---
 const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: string) => void }) => ( <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', textAlign: 'center', p: 3, color: 'text.secondary' }}> <Avatar sx={{ width: 72, height: 72, mb: 2, backgroundColor: 'rgba(255,255,255,0.7)' }}><SmartToyOutlinedIcon sx={{ fontSize: 36, color: '#475569' }} /></Avatar> <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>AI 템플릿 만들기</Typography> <Typography sx={{ mb: 3, maxWidth: '600px' }}>원하는 알림톡 내용을 자유롭게 작성해보세요.</Typography> <Stack direction="row" spacing={1.5}> <Button variant="outlined" onClick={() => onExampleClick("배송 시작 알림톡 만들어줘")}>"배송 시작 알림톡"</Button> <Button variant="outlined" onClick={() => onExampleClick("신규 가입 환영 메시지")}>"신규 가입 환영 메시지"</Button> </Stack> </Box> );
 const renderTemplateWithPlaceholders = (text: string) => ( <>{text.split(/(#{\w+})/g).map((part, index) => (/#{\w+}/.test(part) ? <Placeholder key={index}>{part}</Placeholder> : part))}</> );
-const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => { const { title, body, image_url, buttons } = template; const today = new Date(); const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`; return ( <Box sx={{ p: '12px', bgcolor: '#b2c7d9', fontFamily: 'sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}> <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}> <Typography sx={{ bgcolor: 'rgba(0,0,0,0.1)', color: '#fff', fontSize: '11px', fontWeight: 'bold', px: 1.5, py: 0.5, borderRadius: '12px' }}> {dateString} </Typography> </Box> <Box sx={{ display: 'flex', alignItems: 'flex-start' }}> <Avatar variant="rounded" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iYmxhY2siLz4KPHBhdGggZD0iTTExIDIwLjI0MDNMMjAuMjQwMyAxMUwyOS40ODAzIDIwLjI0MDNMMjAuMjQwMyAyOS40ODAzTDExIDIwLjI0MDNaIiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfMjcxXzEwMzgpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXJfMjcxXzEwMzgiIHgxPSIxMSIgeTE9IjExIiB4Mj0iMjkuNDgwMyIgeTI9IjI hallmarksIgeTI9IjI5LjQ4MDMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI0ZGRTgwQSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY_Rvb3I9IiNGRkEyMDAiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K" sx={{ width: 40, height: 40, mr: 1, borderRadius: '14px' }} /> <Box sx={{ flex: 1 }}> <Typography sx={{ fontSize: '13px', fontWeight: 400, color: '#000', mb: 0.5 }}>자버 채널</Typography> <Paper sx={{ position: 'relative', borderRadius: '18px', borderTopLeftRadius: '4px', overflow: 'hidden', boxShadow: '0 1px 1px rgba(0,0,0,0.05)', maxWidth: '90%', p: 0, bgcolor: '#fff', backdropFilter: 'none', border: 'none' }}> <Box sx={{ content: '""', position: 'absolute', left: -7, top: 8, width: 0, height: 0, border: '8px solid transparent', borderLeft: 'none', borderRightColor: '#FFEB00' }} /> <Box sx={{ bgcolor: '#FFEB00', p: '10px 12px' }}> <Typography sx={{ fontSize: '12px', color: '#000', fontWeight: 'bold' }}>알림톡 도착</Typography> </Box> <Box sx={{ p: '16px' }}> {image_url && <Box component="img" src={image_url} alt="Preview" sx={{ mb: 1.5, width: '100%', borderRadius: '10px' }} />} <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 'bold', mb: 1, color: '#000' }}>{renderTemplateWithPlaceholders(title)}</Typography> <Typography component="div" sx={{ fontSize: '15px', whiteSpace: 'pre-wrap', lineHeight: 1.5, color: '#333' }}>{renderTemplateWithPlaceholders(body)}</Typography> </Box> {buttons && buttons.length > 0 && ( <Box sx={{ borderTop: '1px solid #f0f0f0' }}> {buttons.map(([type, text], index) => ( <Box key={index} sx={{ textAlign: 'center', p: '14px 16px', fontSize: '15px', fontWeight: '500', color: '#555', cursor: 'pointer' }}> {renderTemplateWithPlaceholders(text)} </Box> ))} </Box> )} </Paper> </Box> </Box> </Box> ); };
-const IPhoneMockup = ({ children }: { children: React.ReactNode }) => ( <Paper sx={{ width: '100%', height: '100%', borderRadius: '44px', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#1c1c1e', border: '4px solid #d1d1d6', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}> <Box sx={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '30px', bgcolor: '#1c1c1e', borderRadius: '0 0 16px 16px', zIndex: 2 }} /> <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#b2c7d9', overflow: 'hidden' }}> <Box sx={{ p: '4px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#000', zIndex: 1, height: '44px' }}> <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg> <Typography sx={{ fontSize: '17px', fontWeight: '600' }}>자버 채널</Typography> <Box sx={{ display: 'flex', gap: '16px' }}> <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg> <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg> </Box> </Box> <Box sx={{ flex: 1, overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}> {children} </Box> </Box> </Paper> );
+const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => { const { title, body, image_url, buttons } = template; const today = new Date(); const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`; return ( <Box sx={{ p: '12px', bgcolor: '#b2c7d9', fontFamily: 'sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}> <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}> <Typography sx={{ bgcolor: 'rgba(0,0,0,0.1)', color: '#fff', fontSize: '11px', fontWeight: 'bold', px: 1.5, py: 0.5, borderRadius: '12px' }}> {dateString} </Typography> </Box> <Box sx={{ display: 'flex', alignItems: 'flex-start' }}> <Avatar variant="rounded" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iYmxhY2siLz4KPHBhdGggZD0iTTExIDIwLjI0MDNMMjAuMjQwMyAxMUwyOS40ODAzIDIwLjI0MDNMMjAuMjQwMyAyOS4_NDgwMyTDExIDIwLjI0MDNaIiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfMjcxXzEwMzgpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXJfMjcxXzEwMzgiIHgxPSIxMSIgeTE9IjExIiB4Mj0iMjkuNDgwMyIgeTI9IjI hallmarksIgeTI9IjI5LjQ4MDMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI0ZGRTgwQSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY_Rvb3I9IiNGRkEyMDAiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K" sx={{ width: 40, height: 40, mr: 1, borderRadius: '14px' }} /> <Box sx={{ flex: 1 }}> <Typography sx={{ fontSize: '13px', fontWeight: 400, color: '#000', mb: 0.5 }}>자버 채널</Typography> <Paper sx={{ position: 'relative', borderRadius: '18px', borderTopLeftRadius: '4px', overflow: 'hidden', boxShadow: '0 1px 1px rgba(0,0,0,0.05)', maxWidth: '90%', p: 0, bgcolor: '#fff', backdropFilter: 'none', border: 'none' }}> <Box sx={{ content: '""', position: 'absolute', left: -7, top: 8, width: 0, height: 0, border: '8px solid transparent', borderLeft: 'none', borderRightColor: '#FFEB00' }} /> <Box sx={{ bgcolor: '#FFEB00', p: '10px 12px' }}> <Typography sx={{ fontSize: '12px', color: '#000', fontWeight: 'bold' }}>알림톡 도착</Typography> </Box> <Box sx={{ p: '16px' }}> {image_url && <Box component="img" src={image_url} alt="Preview" sx={{ mb: 1.5, width: '100%', borderRadius: '10px' }} />} <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 'bold', mb: 1, color: '#000' }}>{renderTemplateWithPlaceholders(title)}</Typography> <Typography component="div" sx={{ fontSize: '15px', whiteSpace: 'pre-wrap', lineHeight: 1.5, color: '#333' }}>{renderTemplateWithPlaceholders(body)}</Typography> </Box> {buttons && buttons.length > 0 && ( <Box sx={{ borderTop: '1px solid #f0f0f0' }}> {buttons.map(([type, text], index) => ( <Box key={index} sx={{ textAlign: 'center', p: '14px 16px', fontSize: '15px', fontWeight: '500', color: '#555', cursor: 'pointer' }}> {renderTemplateWithPlaceholders(text)} </Box> ))} </Box> )} </Paper> </Box> </Box> </Box> ); };
 
-// ▼▼▼ [수정 1] 'StyleSelector'를 대체할 새로운 범용 'OptionsPresenter' 컴포넌트 ▼▼▼
-const OptionsPresenter = ({ msg, onOptionSelect }: { msg: BotResponse, onOptionSelect: (option: string) => void }) => {
+// ▼▼▼ [수정된 부분 시작] ▼▼▼
+const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
+    <Paper sx={{
+        width: '100%',
+        height: '760px', // 실제 비율과 유사하도록 고정 높이 설정
+        maxHeight: '100%', // 컨테이너를 벗어나지 않도록 설정
+        borderRadius: '44px',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#1c1c1e',
+        border: '4px solid #d1d1d6',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)'
+    }}>
+        <Box sx={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '30px', bgcolor: '#1c1c1e', borderRadius: '0 0 16px 16px', zIndex: 2 }} />
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#b2c7d9', overflow: 'hidden' }}>
+            <Box sx={{ p: '4px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#000', zIndex: 1, height: '44px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+                <Typography sx={{ fontSize: '17px', fontWeight: '600' }}>자버 채널</Typography>
+                <Box sx={{ display: 'flex', gap: '16px' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+                </Box>
+            </Box>
+            <Box sx={{ flex: 1, overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
+                {children}
+            </Box>
+        </Box>
+    </Paper>
+);
+// ▲▲▲ [수정된 부분 끝] ▲▲▲
+
+interface OptionsPresenterProps {
+    msg: BotResponse;
+    onOptionSelect: (option: string) => void;
+    selectedStyle: string | null;
+    onStyleSelect: (style: string) => void;
+}
+
+const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }: OptionsPresenterProps) => {
     if (!msg.options || msg.options.length === 0) return null;
 
-    // 백엔드에서 받은 옵션에 따라 동적으로 제목을 결정
+    const isStyleSelection = msg.options.includes('기본형') && msg.options.includes('이미지형') && msg.options.includes('아이템리스트형');
+
+    // 스타일 선택 UI일 경우
+    if (isStyleSelection) {
+        return (
+            <Paper elevation={0} sx={{ p: 2, mt: 1, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>스타일 선택</Typography>
+                <Stack spacing={1}>
+                    {msg.options.map((option, index) => (
+                        <Button
+                            key={index}
+                            variant={selectedStyle === option ? "contained" : "outlined"}
+                            onClick={() => onStyleSelect(option)}
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </Stack>
+                <Button
+                    variant="contained"
+                    fullWidth
+                    disabled={!selectedStyle}
+                    onClick={() => {
+                        if (selectedStyle) {
+                            onOptionSelect(selectedStyle);
+                        }
+                    }}
+                    sx={{ mt: 2 }}
+                >
+                    클릭한 스타일로 진행하기
+                </Button>
+            </Paper>
+        );
+    }
+
+    // 그 외 일반적인 옵션 UI (예: 예/아니오)
     let title = "옵션 선택";
     if (JSON.stringify(msg.options) === JSON.stringify(['예', '아니오'])) {
         title = "진행 여부 확인";
-    } else if (msg.options.some(opt => opt.includes('템플릿') || opt.includes('새로 만들기'))) {
-        title = "템플릿/옵션 선택";
     }
 
     return (
@@ -73,11 +143,10 @@ export default function SuggestionPage() {
     const [conversation, setConversation] = useState<BotResponse[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [sessionState, setSessionState] = useState({}); // sessionState는 이제 객체로만 관리
+    const [sessionState, setSessionState] = useState({});
     const [livePreviewTemplate, setLivePreviewTemplate] = useState<StructuredTemplate | null>(null);
-    // ▼▼▼ [수정 2] 'StyleSelector'에만 필요했던 'selectedStyle' 상태 및 관련 핸들러 제거 ▼▼▼
-    // const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
+    const [selectedStyleOption, setSelectedStyleOption] = useState<string | null>(null);
 
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation]);
 
@@ -98,8 +167,7 @@ export default function SuggestionPage() {
             } else if (data.structured_templates && data.structured_templates.length > 0) {
                 setLivePreviewTemplate(data.structured_templates[0]);
             } else {
-                // 이전에 선택된 미리보기가 남아있지 않도록 초기화
-                const isConfirmation = JSON.stringify(data.options) === JSON.stringify(['예', '아니오']);
+                const isConfirmation = data.options && JSON.stringify(data.options) === JSON.stringify(['예', '아니오']);
                 if(!isConfirmation) setLivePreviewTemplate(null);
             }
             if (data.response.includes("AI가 자동으로 수정하겠습니다.")) { setTimeout(() => callChatApi("자동 수정 진행", data.state), 1500); }
@@ -114,7 +182,7 @@ export default function SuggestionPage() {
         if (!message.trim() || isLoading) return;
         const userMessage = message;
         setInputValue('');
-        // 옵션 선택 시 이전 옵션 UI가 보이지 않도록 대화 기록에서 옵션 제거
+        setSelectedStyleOption(null);
         setConversation(prev => {
             const newConversation = prev.map(msg => ({ ...msg, templates: undefined, options: undefined }));
             return [...newConversation, { id: Date.now(), type: 'user', content: userMessage, timestamp: getCurrentTime() }];
@@ -134,14 +202,14 @@ export default function SuggestionPage() {
         handleSendMessage(messageToSend);
     };
 
-    // ▼▼▼ [수정 2] 'StyleSelector' 관련 핸들러 제거 ▼▼▼
-    // const handleStyleSelect = (style: string) => { ... };
-    // const handleConfirmStyle = (style: string) => { ... };
+    const handleStyleSelect = (style: string) => {
+        setSelectedStyleOption(style);
+        setLivePreviewTemplate(STYLE_SKELETONS[style]);
+    };
 
     return (
         <ThemeProvider theme={customTheme}>
             <Box sx={{ flex: 1, minHeight: 0, display: 'flex', gap: 3, p: 3 }}>
-                {/* 왼쪽: AI와 대화하는 패널 */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <Box sx={{ flex: 1, overflowY: 'auto', p: 2, minHeight: 0, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
@@ -152,21 +220,59 @@ export default function SuggestionPage() {
                                         <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : 'rgba(255,255,255,0.8)', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)', backdropFilter: 'none', border: 'none' }}>
                                             <Typography variant="body1">{msg.content}</Typography>
                                         </Paper>
-                                        {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && (
+
+                                        {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && msg.options && (
                                             <Paper elevation={0} sx={{ p: 2, mt: 1, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
                                                 <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>추천 템플릿 선택</Typography>
-                                                <Stack spacing={1.5} divider={<Divider orientation="horizontal" flexItem />}>
+
+                                                <Stack spacing={1} divider={<Divider orientation="horizontal" flexItem />}>
                                                     {msg.templates.map((template, index) => (
-                                                        <Button key={index} variant={msg.selected_template_id === index ? "contained" : "outlined"} onClick={() => handleTemplateSelect(msg.id, index, template)}>
-                                                            {template.title}
+                                                        <Button
+                                                            key={`template-${index}`}
+                                                            variant={msg.selected_template_id === index ? "contained" : "outlined"}
+                                                            onClick={() => handleTemplateSelect(msg.id, index, template)}
+                                                        >
+                                                            {renderTemplateWithPlaceholders(template.body.split('\n')[0])}
                                                         </Button>
                                                     ))}
+                                                    <Button
+                                                        key="new-template-button"
+                                                        variant="outlined"
+                                                        onClick={() => handleSendMessage("새로 만들기")}
+                                                    >
+                                                        새로 만들기
+                                                    </Button>
                                                 </Stack>
-                                                <Button variant="contained" sx={{ mt: 2, width: '100%' }} onClick={() => handleConfirmSelection(msg.id)} disabled={msg.selected_template_id === null || msg.selected_template_id === undefined}>선택한 템플릿으로 진행</Button>
+
+                                                <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                                                    <Button
+                                                        variant="contained"
+                                                        onClick={() => handleConfirmSelection(msg.id)}
+                                                        disabled={msg.selected_template_id === null || msg.selected_template_id === undefined}
+                                                        sx={{ flexGrow: 1 }}
+                                                    >
+                                                        선택한 템플릿으로 진행
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={() => handleSendMessage("실행 취소")}
+                                                        sx={{ flexGrow: 1 }}
+                                                    >
+                                                        실행 취소
+                                                    </Button>
+                                                </Stack>
                                             </Paper>
                                         )}
-                                        {/* ▼▼▼ [수정 3] 기존 'StyleSelector' 호출을 새로운 'OptionsPresenter' 호출로 변경 ▼▼▼ */}
-                                        {msg.type === 'bot' && msg.options && <OptionsPresenter msg={msg} onOptionSelect={handleSendMessage} />}
+
+                                        {msg.type === 'bot' && (!msg.templates || msg.templates.length === 0) && msg.options && (
+                                            <OptionsPresenter
+                                                msg={msg}
+                                                onOptionSelect={handleSendMessage}
+                                                selectedStyle={selectedStyleOption}
+                                                onStyleSelect={handleStyleSelect}
+                                            />
+                                        )}
+
                                         <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
                                     </Box>
                                 </Box>
@@ -177,30 +283,22 @@ export default function SuggestionPage() {
                         <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>
                             <Paper component="form" onSubmit={e => { e.preventDefault(); handleSendMessage(inputValue); }} sx={{ p: '4px 8px', display: 'flex', alignItems: 'center', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.4)', background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'none', boxShadow: 'none' }}>
                                 <TextField fullWidth multiline maxRows={5} variant="standard" placeholder="메시지를 입력하거나, 예시를 클릭해보세요..." value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(inputValue); } }} sx={{ ml: 1, flex: 1 }} InputProps={{ disableUnderline: true }} />
-                                <IconButton type="submit" sx={{ p: '10px', bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: '#2563eb' }, '&:disabled': { bgcolor: '#e2e8f0', color: '#94a3b8' } }} disabled={isLoading || !inputValue.trim()}>
-                                    <SendIcon />
+                                <IconButton color="primary" type="submit" sx={{ p: '10px' }} disabled={!inputValue.trim() || isLoading}>
+                                    {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
                                 </IconButton>
                             </Paper>
                         </Box>
                     </InteractiveCard>
                 </Box>
-
-                {/* 오른쪽: 아이폰 미리보기 패널 */}
-                <Stack spacing={2} sx={{ width: '400px', minWidth: '400px' }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>실시간 미리보기</Typography>
-                        <Button variant="contained" disabled={!livePreviewTemplate}>카톡 발송하기</Button>
-                    </Stack>
-                    <Box sx={{ flex: 1, minHeight: 0 }}>
-                        <IPhoneMockup>
-                            {livePreviewTemplate ? <IPhoneKakaoPreview template={livePreviewTemplate} /> : (
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(0,0,0,0.4)' }}>
-                                    <Typography>템플릿을 선택하면 여기에 표시됩니다.</Typography>
-                                </Box>
-                            )}
-                        </IPhoneMockup>
-                    </Box>
-                </Stack>
+                <Box sx={{ width: '360px', height: 'calc(100vh - 48px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                    <IPhoneMockup>
+                        {livePreviewTemplate ? <IPhoneKakaoPreview template={livePreviewTemplate} /> : (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'text.secondary' }}>
+                                <Typography variant="body2">템플릿 미리보기</Typography>
+                            </Box>
+                        )}
+                    </IPhoneMockup>
+                </Box>
             </Box>
         </ThemeProvider>
     );
