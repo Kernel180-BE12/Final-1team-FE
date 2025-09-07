@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppBar, Box, Toolbar, Button, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 
-// 사이드바에 표시될 메뉴 아이템 목록
 const menuItems = [
     { text: 'AI 에이전트', path: '/agent' },
     { text: '내 템플릿', path: '/my-templates' },
@@ -14,51 +13,84 @@ type LayoutProps = {
 };
 
 const Layout = ({ children }: LayoutProps) => {
-  return (
-    <Box> 
-      {/* 상단 내비게이터바를 이용하기 위한 AppBar */}
-      <AppBar 
-        position="fixed" // 화면 상단에 고정
-        sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1, // 다른 요소들 위에 보이도록 zIndex 설정
-          backgroundColor: '#ffffff', // 배경색을 하얗게
-          borderBottom: '1px solid #e0e0e0', // 하단 경계선 추가
-          boxShadow: 'none', // 그림자 제거
-        }}
-      >
-        <Toolbar>
-          {/* 로고나 앱 타이틀을 위한 공간 */}
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, color: '#000000' }}>
-            Jober
-          </Typography>
-          
-          {/* 메뉴 아이템들을 가로로 배치 */}
-          <Box>
-            {menuItems.map((item) => (
-              <Button
-                key={item.text}
-                component={Link} // react-router-dom의 Link로 동작
-                to={item.path}
-                sx={{ color: '#000000' }} // 버튼 텍스트 색상
-              >
-                {item.text}
-              </Button>
-            ))}
-          </Box>
-        </Toolbar>
-      </AppBar>
+    // [추가] 마우스 위치에 따른 배경 효과를 위한 상태
+    const [lightPosition, setLightPosition] = useState({ x: 0, y: 0 });
 
-      {/* 오른쪽 메인 콘텐츠 영역 */}
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
-      >
-        {/* AppBar의 높이만큼 공간을 띄워주기 위한 Toolbar */}
-        <Toolbar />
-        {children}
-      </Box>
-    </Box>
-  );
+    const handleMouseMove = (e: React.MouseEvent) => {
+        setLightPosition({ x: e.clientX, y: e.clientY });
+    };
+
+    return (
+        <Box
+            onMouseMove={handleMouseMove}
+            sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100vh',
+                overflow: 'hidden', // 페이지 스크롤 방지
+                position: 'relative', // 자식 요소의 absolute 포지셔닝을 위해
+                // [변경] 전체 페이지에 그라데이션 배경 적용
+                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            }}
+        >
+            {/* [추가] 마우스를 따라다니는 조명 효과 */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    width: '800px',
+                    height: '800px',
+                    background: `radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 60%)`,
+                    borderRadius: '50%',
+                    pointerEvents: 'none',
+                    transform: `translate(${lightPosition.x - 400}px, ${lightPosition.y - 400}px)`,
+                    transition: 'transform 0.2s ease-out',
+                    zIndex: 0,
+                }}
+            />
+
+            <AppBar
+                position="static"
+                sx={{
+                    // [변경] 유리 질감의 반투명 AppBar
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: 'none',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+                    zIndex: 2, // 콘텐츠 위에 있도록 zIndex 설정
+                }}
+            >
+                <Toolbar>
+                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, color: '#0f172a', fontWeight: 'bold' }}>
+                        Jober
+                    </Typography>
+                    <Box>
+                        {menuItems.map((item) => (
+                            <Button
+                                key={item.text}
+                                component={Link}
+                                to={item.path}
+                                sx={{ color: '#334155', fontWeight: 500 }}
+                            >
+                                {item.text}
+                            </Button>
+                        ))}
+                    </Box>
+                </Toolbar>
+            </AppBar>
+
+            <Box
+                component="main"
+                sx={{
+                    flexGrow: 1,
+                    minHeight: 0,
+                    display: 'flex',
+                    zIndex: 1, // 조명 효과 위에 콘텐츠가 오도록 설정
+                }}
+            >
+                {children}
+            </Box>
+        </Box>
+    );
 };
 
 export default Layout;

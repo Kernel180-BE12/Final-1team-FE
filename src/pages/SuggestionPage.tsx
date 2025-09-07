@@ -22,7 +22,7 @@ interface BotResponse {
     options?: string[];
 }
 
-// [추가] 프론트엔드에 미리 정의해두는 스타일 뼈대 데이터
+// --- 상수 및 기본 데이터 ---
 const STYLE_SKELETONS: { [key: string]: StructuredTemplate } = {
     '기본형': {
         title: '[제목이 여기에 표시됩니다]',
@@ -42,77 +42,181 @@ const STYLE_SKELETONS: { [key: string]: StructuredTemplate } = {
     }
 };
 
-// --- 스타일 컴포넌트들 ---
-const Placeholder = styled('span')({ color: '#007bff', fontWeight: 'bold', backgroundColor: 'rgba(0, 123, 255, 0.1)', padding: '2px 4px', borderRadius: '4px' });
+// --- 스타일 컴포넌트 ---
+const Placeholder = styled('span' )({
+    color: '#3b82f6',
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    padding: '2px 4px',
+    borderRadius: '4px'
+});
 
-// --- 초기 화면 안내 컴포넌트 ---
-const EmptyChatPlaceholder = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', textAlign: 'center', p: 3 }}>
-        <Avatar sx={{ bgcolor: '#FEE500', color: '#191919', width: 56, height: 56, mb: 2 }}><SmartToyOutlinedIcon fontSize="large" /></Avatar>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>무엇을 도와드릴까요?</Typography>
-        <Typography sx={{ mb: 3, maxWidth: '600px', color: '#4B5563' }}>원하는 알림톡 내용을 자유롭게 작성해보세요.</Typography>
+const customTheme = createTheme({
+    typography: {
+        fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif",
+    },
+    palette: {
+        primary: {
+            main: '#3b82f6',
+        },
+        secondary: {
+            main: '#64748b',
+        },
+        background: {
+            default: 'transparent',
+            paper: 'rgba(255, 255, 255, 0.6)',
+        },
+        text: {
+            primary: '#0f172a',
+            secondary: '#475569',
+        }
+    },
+    components: {
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    backdropFilter: 'blur(16px) saturate(180%)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                    borderRadius: '24px',
+                    background: 'rgba(255, 255, 255, 0.6)',
+                }
+            }
+        },
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    textTransform: 'none',
+                    borderRadius: '12px',
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                    transition: 'transform 0.1s ease-in-out',
+                    '&:active': {
+                        transform: 'scale(0.98)',
+                    }
+                },
+                contained: {
+                    backgroundColor: '#3b82f6',
+                    '&:hover': {
+                        backgroundColor: '#2563eb',
+                    }
+                },
+                outlined: {
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    color: '#334155',
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                        borderColor: 'rgba(255, 255, 255, 0.8)',
+                    }
+                }
+            }
+        },
+        MuiAvatar: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    color: '#1e293b',
+                }
+            }
+        }
+    }
+});
+
+const InteractiveCard = styled(Paper)({});
+
+// --- 유틸리티 및 헬퍼 컴포넌트 ---
+const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: string) => void }) => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', textAlign: 'center', p: 3, color: 'text.secondary' }}>
+        <Avatar sx={{ width: 72, height: 72, mb: 2, backgroundColor: 'rgba(255,255,255,0.7)' }}><SmartToyOutlinedIcon sx={{ fontSize: 36, color: '#475569' }} /></Avatar>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 1 }}>AI 템플릿 만들기</Typography>
+        <Typography sx={{ mb: 3, maxWidth: '600px' }}>원하는 알림톡 내용을 자유롭게 작성해보세요.</Typography>
+        <Stack direction="row" spacing={1.5}>
+            <Button variant="outlined" onClick={() => onExampleClick("배송 시작 알림톡 만들어줘")}>"배송 시작 알림톡"</Button>
+            <Button variant="outlined" onClick={() => onExampleClick("신규 가입 환영 메시지")}>"신규 가입 환영 메시지"</Button>
+        </Stack>
     </Box>
 );
-
-// --- 템플릿 미리보기 컴포넌트 ---
-const TemplatePreview = ({ template }: { template: StructuredTemplate }) => {
-    const { title, body, image_url, buttons } = template;
-    return (
-        <Paper sx={{ flex: 1, borderRadius: '20px', overflow: 'hidden', border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ backgroundColor: '#FEE500', color: '#191919', p: '12px 20px', fontWeight: 'bold', fontSize: '15px' }}>알림톡 도착</Box>
-            <Box sx={{ p: 3, bgcolor: 'white', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {image_url && <Box component="img" src={image_url} alt="Preview" sx={{ mb: 2, maxWidth: '100%', borderRadius: '8px' }} />}
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>{renderTemplateWithPlaceholders(title)}</Typography>
-                <Typography component="div" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8, flex: 1 }}>{renderTemplateWithPlaceholders(body)}</Typography>
-                {buttons && buttons.length > 0 && (
-                    <Stack spacing={1} sx={{ mt: 2 }}>
-                        {buttons.map(([type, text], index) => (
-                            <Box key={index} sx={{ border: '1px solid #e0e0e0', borderRadius: '8px', textAlign: 'center', p: '14px 10px', fontSize: '16px', fontWeight: '500', color: '#333' }}>
-                                {renderTemplateWithPlaceholders(text)}
-                            </Box>
-                        ))}
-                    </Stack>
-                )}
-            </Box>
-        </Paper>
-    );
-};
 
 const renderTemplateWithPlaceholders = (text: string) => (
     <>{text.split(/(#{\w+})/g).map((part, index) => (/#{\w+}/.test(part) ? <Placeholder key={index}>{part}</Placeholder> : part))}</>
 );
 
-// [추가] 스타일 선택 UI 컴포넌트
-const StyleSelector = ({ msg, onStyleSelect, onConfirm, selectedStyle }: { msg: BotResponse, onStyleSelect: (style: string) => void, onConfirm: (style: string) => void, selectedStyle: string | null }) => {
-    if (!msg.options || msg.options.length === 0) return null;
+const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
+    const { title, body, image_url, buttons } = template;
+    const today = new Date();
+    const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
     return (
-        <Paper elevation={1} sx={{ p: 2, mt: 1, bgcolor: '#f9f9f9', borderRadius: '12px' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: 'text.secondary' }}>스타일 선택하여 미리보기</Typography>
-            <Stack spacing={1}>
-                {msg.options.map((option, index) => (
-                    <Button
-                        key={index}
-                        variant={selectedStyle === option ? "contained" : "outlined"}
-                        onClick={() => onStyleSelect(option)}
-                        sx={{ justifyContent: 'flex-start', textTransform: 'none', textAlign: 'left' }}
-                    >
-                        {option}
-                    </Button>
-                ))}
-            </Stack>
-            <Button
-                variant="contained"
-                sx={{ mt: 2, width: '100%' }}
-                onClick={() => onConfirm(selectedStyle!)}
-                disabled={!selectedStyle}
-            >
-                이 스타일로 진행하기
-            </Button>
-        </Paper>
+        <Box sx={{ p: '12px', bgcolor: '#b2c7d9', fontFamily: 'sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+                <Typography sx={{ bgcolor: 'rgba(0,0,0,0.1)', color: '#fff', fontSize: '11px', fontWeight: 'bold', px: 1.5, py: 0.5, borderRadius: '12px' }}>
+                    {dateString}
+                </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                <Avatar
+                    variant="rounded"
+                    src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iYmxhY2siLz4KPHBhdGggZD0iTTExIDIwLjI0MDNMMjAuMjQwMyAxMUwyOS40ODAzIDIwLjI0MDNMMjAuMjQwMyAyOS40ODAzTDExIDIwLjI0MDNaIiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXJfMjcxXzEwMzgpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9InBhaW50MF9saW5lYXJfMjcxXzEwMzgiIHgxPSIxMSIgeTE9IjExIiB4Mj0iMjkuNDgwMyIgeTI9IjI5LjQ4MDMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI0ZGRTgwQSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNGRkEyMDAiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K"
+                    sx={{ width: 40, height: 40, mr: 1, borderRadius: '14px' }}
+                />
+                <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 400, color: '#000', mb: 0.5 }}>자버 채널</Typography>
+                    <Paper sx={{ position: 'relative', borderRadius: '18px', borderTopLeftRadius: '4px', overflow: 'hidden', boxShadow: '0 1px 1px rgba(0,0,0,0.05)', maxWidth: '90%', p: 0, bgcolor: '#fff', backdropFilter: 'none', border: 'none' }}>
+                        <Box sx={{ content: '""', position: 'absolute', left: -7, top: 8, width: 0, height: 0, border: '8px solid transparent', borderLeft: 'none', borderRightColor: '#FFEB00' }} />
+                        <Box sx={{ bgcolor: '#FFEB00', p: '10px 12px' }}>
+                            <Typography sx={{ fontSize: '12px', color: '#000', fontWeight: 'bold' }}>알림톡 도착</Typography>
+                        </Box>
+                        <Box sx={{ p: '16px' }}>
+                            {image_url && <Box component="img" src={image_url} alt="Preview" sx={{ mb: 1.5, width: '100%', borderRadius: '10px' }} />}
+                            <Typography variant="h6" sx={{ fontSize: '17px', fontWeight: 'bold', mb: 1, color: '#000' }}>{renderTemplateWithPlaceholders(title)}</Typography>
+                            <Typography component="div" sx={{ fontSize: '15px', whiteSpace: 'pre-wrap', lineHeight: 1.5, color: '#333' }}>{renderTemplateWithPlaceholders(body)}</Typography>
+                        </Box>
+                        {buttons && buttons.length > 0 && (
+                            <Box sx={{ borderTop: '1px solid #f0f0f0' }}>
+                                {buttons.map(([type, text], index) => (
+                                    <Box key={index} sx={{ textAlign: 'center', p: '14px 16px', fontSize: '15px', fontWeight: '500', color: '#555', cursor: 'pointer' }}>
+                                        {renderTemplateWithPlaceholders(text)}
+                                    </Box>
+                                ))}
+                            </Box>
+                        )}
+                    </Paper>
+                </Box>
+            </Box>
+        </Box>
     );
 };
 
+const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
+    <Paper sx={{ width: '100%', height: '100%', borderRadius: '44px', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#1c1c1e', border: '4px solid #d1d1d6', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
+        <Box sx={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '30px', bgcolor: '#1c1c1e', borderRadius: '0 0 16px 16px', zIndex: 2 }} />
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#b2c7d9', overflow: 'hidden' }}>
+            <Box sx={{ p: '4px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#000', zIndex: 1, height: '44px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path></svg>
+                <Typography sx={{ fontSize: '17px', fontWeight: '600' }}>자버 채널</Typography>
+                <Box sx={{ display: 'flex', gap: '16px' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+                </Box>
+            </Box>
+            <Box sx={{ flex: 1, overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
+                {children}
+            </Box>
+        </Box>
+    </Paper>
+);
+
+const StyleSelector = ({ msg, onStyleSelect, onConfirm, selectedStyle }: { msg: BotResponse, onStyleSelect: (style: string) => void, onConfirm: (style: string) => void, selectedStyle: string | null }) => {
+    if (!msg.options || msg.options.length === 0) return null;
+    return (
+        <Paper elevation={0} sx={{ p: 2, mt: 1, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>스타일 선택</Typography>
+            <Stack spacing={1}>{msg.options.map((option, index) => (<Button key={index} variant={selectedStyle === option ? "contained" : "outlined"} onClick={() => onStyleSelect(option)}>{option}</Button>))}</Stack>
+            <Button variant="contained" sx={{ mt: 2, width: '100%' }} onClick={() => onConfirm(selectedStyle!)} disabled={!selectedStyle}>이 스타일로 진행</Button>
+        </Paper>
+    );
+};
 
 // --------------------------------------------------------------------------
 //  메인 UI 컴포넌트
@@ -123,7 +227,7 @@ export default function SuggestionPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [sessionState, setSessionState] = useState({ step: 'initial' });
     const [livePreviewTemplate, setLivePreviewTemplate] = useState<StructuredTemplate | null>(null);
-    const [selectedStyle, setSelectedStyle] = useState<string | null>(null); // [추가] 현재 선택된 스타일 미리보기 상태
+    const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation]);
@@ -132,36 +236,22 @@ export default function SuggestionPage() {
 
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
-        setLivePreviewTemplate(null); // API 호출 시작 시 미리보기 초기화
         try {
-            const res = await fetch('http://localhost:8000/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, state: currentState } ),
-            });
+            const res = await fetch('http://localhost:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState } ) });
             if (!res.ok) throw new Error((await res.json()).response || '서버 오류');
             const data = await res.json();
             if (!data.success) throw new Error(data.response);
-
-            setConversation(prev => [...prev, {
-                id: Date.now() + 1,
-                type: 'bot',
-                content: data.response,
-                timestamp: getCurrentTime(),
-                templates: data.structured_templates,
-                options: data.options,
-                selected_template_id: null,
-            }]);
-
+            const newBotMessage: BotResponse = { id: Date.now() + 1, type: 'bot', content: data.response, timestamp: getCurrentTime(), templates: data.structured_templates, options: data.options, selected_template_id: null };
+            setConversation(prev => [...prev, newBotMessage]);
             setSessionState(data.state);
-
             if (data.structured_template) {
                 setLivePreviewTemplate(data.structured_template);
+            } else if (data.structured_templates && data.structured_templates.length > 0) {
+                setLivePreviewTemplate(data.structured_templates[0]);
+            } else {
+                setLivePreviewTemplate(null);
             }
-
-            if (data.response.includes("AI가 자동으로 수정하겠습니다.")) {
-                setTimeout(() => callChatApi("진행", data.state), 1500);
-            }
+            if (data.response.includes("AI가 자동으로 수정하겠습니다.")) { setTimeout(() => callChatApi("진행", data.state), 1500); }
         } catch (error) {
             setConversation(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: `오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, timestamp: getCurrentTime() }]);
         } finally {
@@ -171,117 +261,114 @@ export default function SuggestionPage() {
 
     const handleSendMessage = async (message: string) => {
         if (!message.trim() || isLoading) return;
-        const userMessage = message;
-        setInputValue('');
-
-        setConversation(prev => {
-            const newConversation = prev.map(msg => ({ ...msg, templates: undefined, options: undefined }));
-            return [...newConversation, { id: Date.now(), type: 'user', content: userMessage, timestamp: getCurrentTime() }];
-        });
-
-        // [수정] 스타일 선택 상태 초기화
+        const userMessage = message; setInputValue('');
+        setConversation(prev => { const newConversation = prev.map(msg => ({ ...msg, templates: undefined, options: undefined })); return [...newConversation, { id: Date.now(), type: 'user', content: userMessage, timestamp: getCurrentTime() }]; });
         setSelectedStyle(null);
         await callChatApi(userMessage, sessionState);
     };
 
     const handleTemplateSelect = (messageId: number, templateIndex: number, template: StructuredTemplate) => {
-        setConversation(prev => prev.map(msg =>
-            msg.id === messageId ? { ...msg, selected_template_id: templateIndex } : msg
-        ));
+        setConversation(prev => prev.map(msg => msg.id === messageId ? { ...msg, selected_template_id: templateIndex } : msg));
         setLivePreviewTemplate(template);
     };
 
     const handleConfirmSelection = (messageId: number) => {
         const message = conversation.find(msg => msg.id === messageId);
         if (!message || message.selected_template_id === null || message.selected_template_id === undefined) return;
-
         const messageToSend = `템플릿 ${message.selected_template_id + 1}`;
         handleSendMessage(messageToSend);
     };
 
-    // [추가] 스타일 선택 미리보기 핸들러
     const handleStyleSelect = (style: string) => {
         setSelectedStyle(style);
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
 
-    // [추가] 스타일 확정 및 서버 전송 핸들러
     const handleConfirmStyle = (style: string) => {
         handleSendMessage(style);
     };
 
-    const theme = createTheme({ typography: { fontFamily: "'Pretendard', sans-serif" } });
-
     return (
-        <ThemeProvider theme={theme}>
-            <Box sx={{ display: 'flex', gap: 3, height: 'calc(100vh - 64px)', p: 2 }}>
+        <ThemeProvider theme={customTheme}>
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', gap: 3, p: 3 }}>
                 {/* 왼쪽: AI와 대화하는 패널 */}
-                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, border: '1px solid #e0e0e0', borderRadius: '12px', overflow: 'hidden' }}>
-                    <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-                        {conversation.length === 0 ? <EmptyChatPlaceholder /> : conversation.map(msg => (
-                            <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start' }}>
-                                {msg.type === 'bot' && <Avatar sx={{ bgcolor: '#FEE500', color: '#191919', mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
-                                {msg.type === 'user' && <Box sx={{ width: 54 }} />}
-
-                                <Box sx={{ width: '100%', ml: msg.type === 'user' ? 'auto' : 0, display: 'flex', flexDirection: msg.type === 'user' ? 'row-reverse' : 'column' }}>
-                                    <Paper elevation={0} sx={{ p: '10px 14px', borderRadius: msg.type === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px', bgcolor: msg.type === 'user' ? '#FEE500' : '#f0f0f0', color: msg.type === 'user' ? '#191919' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 'fit-content' }}>
-                                        <Typography variant="body2">{msg.content}</Typography>
-                                    </Paper>
-
-                                    {/* 추천 템플릿 UI */}
-                                    {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && (
-                                        <Paper elevation={1} sx={{ p: 2, mt: 1, bgcolor: '#f9f9f9', borderRadius: '12px' }}>
-                                            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: 'text.secondary' }}>추천 템플릿 선택</Typography>
-                                            <Stack spacing={1}>
-                                                {msg.templates.map((template, index) => (
-                                                    <Button key={index} variant={msg.selected_template_id === index ? "contained" : "outlined"} onClick={() => handleTemplateSelect(msg.id, index, template)} sx={{ justifyContent: 'flex-start', textTransform: 'none', textAlign: 'left' }}>
-                                                        {template.title}
-                                                    </Button>
-                                                ))}
-                                                <Button variant="outlined" size="small" onClick={() => handleSendMessage('새로 만들기')} sx={{ mt: 1 }}>새로 만들기</Button>
-                                            </Stack>
-                                            <Button variant="contained" sx={{ mt: 2, width: '100%' }} onClick={() => handleConfirmSelection(msg.id)} disabled={msg.selected_template_id === null}>선택한 템플릿으로 진행</Button>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        {/* [수정] 대화창 스크롤 영역에 커스텀 스크롤바 스타일 적용 */}
+                        <Box sx={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            p: 2,
+                            minHeight: 0,
+                            // 스크롤바를 항상 보이지 않게 처리
+                            '&::-webkit-scrollbar': {
+                                display: 'none'
+                            },
+                            // Firefox를 위한 설정
+                            scrollbarWidth: 'none'
+                        }}>
+                            {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => (
+                                <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
+                                    {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
+                                    <Box sx={{ maxWidth: '80%', display: 'flex', flexDirection: 'column', alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
+                                        <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : 'rgba(255,255,255,0.8)', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)', backdropFilter: 'none', border: 'none' }}>
+                                            <Typography variant="body1">{msg.content}</Typography>
                                         </Paper>
-                                    )}
-
-                                    {/* [수정] 새로운 스타일 선택 UI 렌더링 */}
-                                    {msg.type === 'bot' && msg.options && msg.options.length > 0 && (
-                                        <StyleSelector
-                                            msg={msg}
-                                            selectedStyle={selectedStyle}
-                                            onStyleSelect={handleStyleSelect}
-                                            onConfirm={handleConfirmStyle}
-                                        />
-                                    )}
-
-                                    <Typography variant="caption" sx={{ display: 'block', textAlign: msg.type === 'user' ? 'right' : 'left', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
+                                        {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && (
+                                            <Paper elevation={0} sx={{ p: 2, mt: 1, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                                                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>추천 템플릿 선택</Typography>
+                                                <Stack spacing={1}>
+                                                    {msg.templates.map((template, index) => (<Button key={index} variant={msg.selected_template_id === index ? "contained" : "outlined"} onClick={() => handleTemplateSelect(msg.id, index, template)}>{template.title}</Button>))}
+                                                    {msg.content.includes("새로 만들기") && (<Button variant="outlined" onClick={() => handleSendMessage("새로 만들기")}>새로 만들기</Button>)}
+                                                </Stack>
+                                                <Button variant="contained" sx={{ mt: 2, width: '100%' }} onClick={() => handleConfirmSelection(msg.id)} disabled={msg.selected_template_id === null || msg.selected_template_id === undefined}>선택한 템플릿으로 진행</Button>
+                                            </Paper>
+                                        )}
+                                        {msg.type === 'bot' && msg.options && <StyleSelector msg={msg} selectedStyle={selectedStyle} onStyleSelect={handleStyleSelect} onConfirm={handleConfirmStyle} />}
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
+                                    </Box>
                                 </Box>
-                            </Box>
-                        ))}
-                        {isLoading && <CircularProgress size={24} sx={{ display: 'block', mx: 'auto', my: 2 }} />}
-                        <div ref={chatEndRef} />
-                    </Box>
-
-                    {/* 메시지 입력창 */}
-                    <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
-                        <Paper component="form" onSubmit={e => { e.preventDefault(); handleSendMessage(inputValue); }} sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', width: '100%', borderRadius: '24px', border: '1px solid #ccc' }}>
-                            <TextField fullWidth multiline maxRows={5} variant="standard" placeholder="메시지를 입력하세요..." value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(inputValue); } }} sx={{ ml: 1, flex: 1 }} InputProps={{ disableUnderline: true }} />
-                            <IconButton type="submit" color="primary" sx={{ p: '10px' }} disabled={isLoading || !inputValue.trim()}><SendIcon /></IconButton>
-                        </Paper>
-                    </Box>
+                            ))}
+                            {isLoading && (<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={32} /></Box>)}
+                            <div ref={chatEndRef} />
+                        </Box>
+                        <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>
+                            <Paper component="form" onSubmit={e => { e.preventDefault(); handleSendMessage(inputValue); }} sx={{ p: '4px 8px', display: 'flex', alignItems: 'center', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.4)', background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'none', boxShadow: 'none' }}>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    maxRows={5}
+                                    variant="standard"
+                                    placeholder="메시지를 입력하거나, 예시를 클릭해보세요..."
+                                    value={inputValue}
+                                    onChange={e => setInputValue(e.target.value)}
+                                    onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(inputValue); } }}
+                                    sx={{ ml: 1, flex: 1 }}
+                                    InputProps={{ disableUnderline: true }}
+                                />
+                                <IconButton type="submit" sx={{ p: '10px', bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: '#2563eb' }, '&:disabled': { bgcolor: '#e2e8f0', color: '#94a3b8' } }} disabled={isLoading || !inputValue.trim()}>
+                                    <SendIcon />
+                                </IconButton>
+                            </Paper>
+                        </Box>
+                    </InteractiveCard>
                 </Box>
 
-                {/* 오른쪽: 미리보기 패널 */}
-                <Stack spacing={2} sx={{ width: '480px', minWidth: '480px' }}>
+                {/* 오른쪽: 아이폰 미리보기 패널 */}
+                <Stack spacing={2} sx={{ width: '400px', minWidth: '400px' }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>미리보기</Typography>
-                        <Button variant="contained" sx={{ background: 'linear-gradient(to right, #6D28D9, #4F46E5)', borderRadius: '8px', fontWeight: 'bold', px: 3, py: 1 }} disabled={!livePreviewTemplate}>카톡 발송하기</Button>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>실시간 미리보기</Typography>
+                        <Button variant="contained" disabled={!livePreviewTemplate}>카톡 발송하기</Button>
                     </Stack>
-                    {livePreviewTemplate ? <TemplatePreview template={livePreviewTemplate} /> : (
-                        <Paper sx={{ flex: 1, borderRadius: '20px', border: '1px dashed #d1d5db', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'transparent' }}>
-                            <Typography color="text.secondary">템플릿을 선택하면 여기에 미리보기가 표시됩니다.</Typography>
-                        </Paper>
-                    )}
+                    <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <IPhoneMockup>
+                            {livePreviewTemplate ? <IPhoneKakaoPreview template={livePreviewTemplate} /> : (
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(0,0,0,0.4)' }}>
+                                    <Typography>템플릿을 선택하면 여기에 표시됩니다.</Typography>
+                                </Box>
+                            )}
+                        </IPhoneMockup>
+                    </Box>
                 </Stack>
             </Box>
         </ThemeProvider>
