@@ -97,7 +97,9 @@ const LoginPage = () => {
 
         if (response.status === 200) {
         console.log('로그인 성공! 서버 응답:', response.data);
-        login();
+        // Swagger 문서에 따르면 응답 데이터는 { userId: number, username: string } 형태입니다.
+        const userInfo = response.data;
+        login(userInfo);
         navigate('/agent');
         }
     } catch (error) {
