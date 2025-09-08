@@ -155,7 +155,7 @@ export default function SuggestionPage() {
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         try {
-            const res = await fetch('http://15.164.102.187:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState } ) });
+            const res = await fetch('https://15.164.102.187:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState } ) });
             if (!res.ok) throw new Error((await res.json()).detail || '서버 오류');
             const data = await res.json();
             if (!data.success) throw new Error(data.response);
