@@ -1,22 +1,47 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import axios from 'axios';
 
-// 이 스토어(게시판)에 어떤 정보가 있는지 타입을 정의합니다.
-interface AuthState {
-  isLoggedIn: boolean; // 로그인 상태 (참/거짓)
-  login: () => void;    // 로그인 상태로 바꾸는 함수
-  logout: () => void;   // 로그아웃 상태로 바꾸는 함수
+interface User {
+  userId: number;
+  username: string;
 }
 
-/**
- * @description 앱 전체의 로그인 상태를 관리하는 Zustand 스토어입니다.
- */
-const useAuthStore = create<AuthState>((set) => ({
-  // 초기 상태는 로그아웃된 상태(false)입니다.
-  isLoggedIn: false,
-  // login 함수를 호출하면, isLoggedIn을 true로 변경합니다.
-  login: () => set({ isLoggedIn: true }),
-  // logout 함수를 호출하면, isLoggedIn을 false로 변경합니다.
-  logout: () => set({ isLoggedIn: false }),
-}));
+interface AuthState {
+  isLoggedIn: boolean;
+  user: User | null;
+  login: (userInfo: User) => void;
+  logout: () => Promise<void>;
+}
+
+const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isLoggedIn: false,
+      user: null,
+
+      // login 함수: 로그인 성공 시 호출되며, 사용자 정보와 로그인 상태를 업데이트합니다.
+      login: (userInfo: User) => set({ isLoggedIn: true, user: userInfo }),
+
+
+      logout: async () => {
+        try {
+          // 서버에 로그아웃 API를 호출하여 서버 측 세션을 만료시킵니다.
+          await axios.post('/api/user/logout');
+        } catch (error) {
+          // 로그아웃 API 호출에 실패하더라도, 클라이언트 측의 상태는 초기화하는 것이
+          // 사용자 경험에 더 좋습니다.
+          console.error('로그아웃 API 호출 실패:', error);
+        } finally {
+          // API 호출 성공/실패 여부와 관계없이 클라이언트의 상태를 초기화합니다.
+          set({ isLoggedIn: false, user: null });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+    }
+  )
+);
 
 export default useAuthStore;
