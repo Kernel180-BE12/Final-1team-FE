@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppBar, Box, Toolbar, Button, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
 
