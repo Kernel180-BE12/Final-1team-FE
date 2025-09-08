@@ -4,6 +4,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
+import KakaoBasicTemplate from '../components/common/KakaoBasicTemplate';
 
 // 사용자가 입력한 내용을 보여주기 위한 예시 데이터
 const userInputExample = `안녕하세요. 마케팅리즈입니다.
@@ -199,7 +200,7 @@ const AgentPage = () => {
                                 sx={{
                                     p: 3,
                                     borderColor: '#e0e0e0',
-                                    height: '40vh',
+                                    
                                     overflowY: 'auto',
                                     borderRadius: '16px',
                                     backgroundColor: 'rgba(255,255,255,0.5)'
@@ -219,22 +220,13 @@ const AgentPage = () => {
                             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1.5, textAlign: 'center' }}>
                                 AI 생성 예시
                             </Typography>
-                            <Paper
-                                sx={{
-                                    p: 3,
-                                    backgroundColor: '#fef01b',
-                                    borderRadius: '12px',
-                                    height: '40vh',
-                                    overflow: 'hidden',
-                                }}
-                            >
-                                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-                                    {aiGenerationExample.title}
-                                </Typography>
-                                <Typography sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>
-                                    {aiGenerationExample.content}
-                                </Typography>
-                            </Paper>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <KakaoBasicTemplate 
+                                  title={aiGenerationExample.title}
+                                  content={aiGenerationExample.content}
+                                  buttonText="자세히 보기"
+                              />
+                            </Box>
                         </Box>
                     </Box>
                 </Box>
