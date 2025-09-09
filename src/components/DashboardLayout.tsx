@@ -1,3 +1,4 @@
+import { Outlet, useNavigate } from 'react-router-dom';
 import {
   Box,
   Drawer,
@@ -12,7 +13,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HomeIcon from '@mui/icons-material/Home';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import ArticleIcon from '@mui/icons-material/Article';
-import { Outlet, useNavigate } from 'react-router-dom';
+
 
 const mainSidebarWidth = 80;
 

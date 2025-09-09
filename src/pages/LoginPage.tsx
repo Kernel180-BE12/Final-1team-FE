@@ -19,7 +19,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import useAuthStore from '../store/useAuthStore';
 import PasswordResetModal from '../components/modals/PasswordResetModal';
-import axios from 'axios';
+import apiClient from '../api';
 
 const interactiveTheme = createTheme({
     palette: {
@@ -89,22 +89,19 @@ const LoginPage = () => {
     if (!isValid) return;
 
     try {
-        // API 요청 시  username을 전송
-        const response = await axios.post('/api/user/login', { 
+        const response = await apiClient.post('/user/login', { 
         username: username,
         password: password,
     });
 
         if (response.status === 200) {
         console.log('로그인 성공! 서버 응답:', response.data);
-        // Swagger 문서에 따르면 응답 데이터는 { userId: number, username: string } 형태입니다.
         const userInfo = response.data;
         login(userInfo);
         navigate('/agent');
         }
     } catch (error) {
-        // 에러 메시지
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
+        if (apiClient.isAxiosError(error) && error.response?.status === 401) {
         setPasswordError('아이디 또는 비밀번호가 일치하지 않습니다.');
         } else {
         console.error('로그인 중 알 수 없는 오류 발생:', error);
@@ -117,25 +114,6 @@ const LoginPage = () => {
     const handleCloseModal = () => setModalOpen(false);
     const handleSignupClick = () => navigate('/register');
 
-  // 3D 인터랙티브 효과
-    const [cardStyle, setCardStyle] = useState({});
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        const { clientX, clientY, currentTarget } = e;
-        const { left, top, width, height } = currentTarget.getBoundingClientRect();
-        const rotateX = -((clientY - top) / height - 0.5) * 20;
-        const rotateY = ((clientX - left) / width - 0.5) * 20;
-        setCardStyle({
-            transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`,
-            transition: 'transform 0.1s ease-out'
-        });
-    };
-    const handleMouseLeave = () => {
-        setCardStyle({
-            transform: 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)',
-            transition: 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
-        });
-    };
-
     return (
     <ThemeProvider theme={interactiveTheme}>
         <CssBaseline />
@@ -146,8 +124,6 @@ const LoginPage = () => {
         `} />
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <Paper
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
             elevation={8}
             sx={{
                 width: '100%', maxWidth: '420px',
@@ -156,8 +132,11 @@ const LoginPage = () => {
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '32px',
                 p: { xs: 3, sm: 5 },
-                transformStyle: 'preserve-3d', willChange: 'transform',
-                ...cardStyle
+                transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                '&:hover': {
+                    transform: 'translateY(-10px)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+                }
             }}
         >
             <Stack spacing={2.5}>
@@ -209,15 +188,9 @@ const LoginPage = () => {
                 로그인
             </Button>
 
-            {/* 소셜 로그인 부분 */}
             { <Divider sx={{ my: 2 }}>또는</Divider> }
-            {/* <Typography align="center" color="text.secondary" sx={{ mb: 1 }}>
-                소셜 계정으로 로그인
-            </Typography> */}
             { <Stack direction="row" spacing={2} justifyContent="center">
                 <IconButton sx={{ width: 56, height: 56, backgroundColor: '#FEE500', '&:hover': { backgroundColor: '#f0d900' } }}>K</IconButton>
-                {/* <IconButton sx={{ width: 56, height: 56, border: '1px solid #e0e0e0', '&:hover': { backgroundColor: '#f5f5f5' } }}>G</IconButton> */}
-                {/* <IconButton sx={{ width: 56, height: 56, backgroundColor: '#03C75A', color: 'white', '&:hover': { backgroundColor: '#02b350' } }}>N</IconButton> */}
             </Stack> }
 
             <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>

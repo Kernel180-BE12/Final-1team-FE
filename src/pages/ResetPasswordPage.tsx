@@ -50,7 +50,7 @@ const PasswordResetPage = () => {
     
     apiClient.get(`/user/validate-token?token=${token}`)
       .then((response) => {
-        setUserEmail(response.data.email); // 백엔드가 이메일을 반환한다고 가정
+        setUserEmail(response.data.email);
         setStatus('valid');
       })
       .catch(() => {
@@ -111,94 +111,94 @@ const PasswordResetPage = () => {
     }
   };
 
-    const renderContent = () => {
+  const renderContent = () => {
     switch (status) {
-        case 'validating':
+      case 'validating':
         return <CircularProgress />;
-        case 'invalid':
+      case 'invalid':
         return <Typography color="error">만료되었거나 유효하지 않은 링크입니다.</Typography>;
-        case 'valid':
+      case 'valid':
         return (
-            <Stack spacing={2.5} sx={{ width: '100%' }}>
+          <Stack spacing={2.5} sx={{ width: '100%' }}>
             <TextField
-                label="이메일"
-                value={userEmail}
-                fullWidth
-                disabled
-                variant="filled"
+              label="이메일"
+              value={userEmail}
+              fullWidth
+              disabled
+              variant="filled"
             />
             <TextField
-                label="새 비밀번호"
-                type="password"
-                fullWidth
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                error={!!passwordError}
-                helperText={passwordError || '8~16자의 영문, 숫자, 특수문자 조합이어야 합니다.'}
-                onBlur={validatePassword}
+              label="새 비밀번호"
+              type="password"
+              fullWidth
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              error={!!passwordError}
+              helperText={passwordError || '8~16자의 영문, 숫자, 특수문자 조합이어야 합니다.'}
+              onBlur={validatePassword}
             />
             <TextField
-                label="새 비밀번호 확인"
-                type="password"
-                fullWidth
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                error={!!confirmPasswordError}
-                helperText={confirmPasswordError}
-                onBlur={validateConfirmPassword}
+              label="새 비밀번호 확인"
+              type="password"
+              fullWidth
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={!!confirmPasswordError}
+              helperText={confirmPasswordError}
+              onBlur={validateConfirmPassword}
             />
             {apiError && <Typography color="error" variant="caption">{apiError}</Typography>}
             <Button variant="contained" fullWidth onClick={handleSubmit} size="large" sx={{ mt: 1, py: 1.5 }}>
-                변경 완료
+              변경 완료
             </Button>
-            </Stack>
+          </Stack>
         );
     }
-    };
+  };
 
-    return (
+  return (
     <ThemeProvider theme={interactiveTheme}>
-        <CssBaseline />
-        <GlobalStyles styles={`
-            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap');
-            @keyframes animated-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-            body { background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); background-size: 400% 400%; animation: animated-gradient 15s ease infinite; }
-        `} />
-        <Box 
-            sx={{ 
+      <CssBaseline />
+      <GlobalStyles styles={`
+          @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap');
+          @keyframes animated-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+          body { background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); background-size: 400% 400%; animation: animated-gradient 15s ease infinite; }
+      `} />
+      <Box 
+          sx={{ 
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center', 
             minHeight: '100vh'
-            }}
-        >
+          }}
+      >
         <Paper 
-            elevation={8}
-            sx={{ 
-                p: 4, width: '100%', maxWidth: '420px', textAlign: 'center', 
-                borderRadius: '32px',
-                background: 'rgba(255, 255, 255, 0.75)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                '&:hover': {
-                    transform: 'translateY(-10px)',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-                }
-            }}
+          elevation={8}
+          sx={{ 
+              p: 4, width: '100%', maxWidth: '420px', textAlign: 'center', 
+              borderRadius: '32px',
+              background: 'rgba(255, 255, 255, 0.75)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+              '&:hover': {
+                  transform: 'translateY(-10px)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+              }
+          }}
         >
-            <Typography 
+          <Typography 
             variant="h5" 
             sx={{ fontWeight: 'bold', mb: 4, cursor: 'pointer' }}
             onClick={() => navigate('/agent')}
-            >
+          >
             AI 템플릿 생성기
-            </Typography>
-            {renderContent()}
+          </Typography>
+          {renderContent()}
         </Paper>
-        </Box>
+      </Box>
     </ThemeProvider>
-    );
+  );
 };
 
 export default PasswordResetPage;
