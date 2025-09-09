@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
     createTheme, 
     ThemeProvider, 
@@ -15,7 +15,6 @@ import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import { useNavigate } from 'react-router-dom';
 import RegisterModal from '../components/modals/RegisterModal';
 
-// 디자인 레퍼런스의 테마와 폰트 
 const interactiveTheme = createTheme({
     palette: {
         mode: 'light',
@@ -50,25 +49,6 @@ const RegisterPage = () => {
     const handleOpenModal = () => setModalOpen(true);
     const handleCloseModal = () => setModalOpen(false);
 
-    // 3D 인터랙티브 효과를 위한 state와 핸들러
-    const [cardStyle, setCardStyle] = useState({});
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        const { clientX, clientY, currentTarget } = e;
-        const { left, top, width, height } = currentTarget.getBoundingClientRect();
-        const rotateX = -((clientY - top) / height - 0.5) * 20;
-        const rotateY = ((clientX - left) / width - 0.5) * 20;
-        setCardStyle({
-            transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`,
-            transition: 'transform 0.1s ease-out'
-        });
-    };
-    const handleMouseLeave = () => {
-        setCardStyle({
-            transform: 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)',
-            transition: 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
-        });
-    };
-
     return (
         <ThemeProvider theme={interactiveTheme}>
             <CssBaseline />
@@ -87,8 +67,6 @@ const RegisterPage = () => {
             `} />
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', textAlign: 'center' }}>
                 <Paper
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={handleMouseLeave}
                     elevation={8}
                     sx={{
                         width: '100%', maxWidth: '500px',
@@ -97,13 +75,16 @@ const RegisterPage = () => {
                         border: '1px solid rgba(255, 255, 255, 0.2)',
                         borderRadius: '32px',
                         p: { xs: 3, sm: 5 },
-                        transformStyle: 'preserve-3d', willChange: 'transform',
-                        ...cardStyle
+                        transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                        '&:hover': {
+                            transform: 'translateY(-10px)',
+                            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+                        }
                     }}
                 >
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                        <Typography variant='h4' component="h1" align="center" sx={{ fontWeight: 'bold' }} >
-                            AI 템플릿 생성기
+                        <Typography variant='h4' component="h1" align="center" sx={{ fontWeight: 'bold' }} onClick={() => navigate('/agent')} >
+                            AI 템플릿 만들기
                         </Typography>
                         
                         <Typography variant="h5" sx={{ fontWeight: 'medium' }}>

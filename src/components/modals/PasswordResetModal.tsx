@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -8,10 +8,10 @@ import {
   TextField,
   Button,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import axios from 'axios';
-
+import apiClient from '../../api';
 interface PasswordResetModalProps {
   open: boolean;
   onClose: () => void;
@@ -25,6 +25,7 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   /**
    * @description '비밀번호 재설정 요청' 버튼 클릭 시 호출
@@ -42,9 +43,13 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
       return;
     }
 
+    setIsLoading(true);
+    setError('');
+    setSuccessMessage('');
+
     try {
       // 서버에 비밀번호 재설정 요청 API 호출
-      const response = await axios.post('/api/user/reset-password', { email });
+      const response = await apiClient.post('/user/reset-password', { email });
 
       if (response.status === 200) {
         setError('');
@@ -54,11 +59,21 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
         }, 2000);
       }
     } catch (err) {
+      if (apiClient.isAxiosError(err) && err.response) {
+        const data = err.response.data;
+        if (typeof data === 'object' && data !== null && 'message' in data && typeof (data as { message: unknown }).message === 'string') {
+          setError((data as { message: string }).message);
+        } else {
+          setError('해당 이메일로 가입된 계정을 찾을 수 없습니다.');
+        }
+      } else {
+        setError('네트워크 오류 또는 알 수 없는 문제가 발생했습니다.');
+      }
       console.error('비밀번호 재설정 요청 실패:', err);
-      setError('해당 이메일로 가입된 계정을 찾을 수 없습니다.');
+    } finally {
+        setIsLoading(false);
     }
   };
-
   /**
    * @description 모달이 닫힐 때 입력값/에러 초기화
    */
@@ -104,11 +119,12 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
           error={!!error}
           helperText={error || successMessage}
           FormHelperTextProps={{ sx: { color: successMessage ? 'green' : 'red' } }}
+          disabled={isLoading || !!successMessage}
         />
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={handleSend} variant="contained" fullWidth>
-          비밀번호 재설정 요청
+        <Button onClick={handleSend} variant="contained" fullWidth size="large" disabled={isLoading || !!successMessage}>
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : '비밀번호 재설정 요청'}
         </Button>
       </DialogActions>
     </Dialog>

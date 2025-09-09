@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate,} from 'react-router-dom';
 
 import PublicLayout from './components/PublicLayout';
@@ -12,6 +11,7 @@ import SuggestionPage from './pages/SuggestionPage';
 import MyTemplatesPage from './pages/MyTemplatesPage';
 import ContactsPage from './pages/ContactsPage';
 import SpacesPage from './pages/SpacesPage'
+import PasswordResetPage from './pages/PasswordResetPage';
 
 export default function App() {
   return (
@@ -20,6 +20,7 @@ export default function App() {
         {/* 그룹 1: Public 구역 (로그인 전) */}
         <Route element={<PublicLayout />}>
           <Route path="/agent" element={<AgentPage />} />
+          
         </Route>
 
         {/* 그룹 2: Dashboard 구역 (로그인 후) */}
@@ -36,6 +37,7 @@ export default function App() {
         {/* 그룹 3: 레이아웃이 없는 독립된 페이지 */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/reset-password" element={<PasswordResetPage />} />
 
         {/* 길 잃은 사용자 처리 */}
         <Route 

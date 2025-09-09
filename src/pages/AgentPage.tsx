@@ -236,7 +236,7 @@ const AgentPage = () => {
       {/* ★★★ 5. Dialog 컴포넌트를 렌더링합니다. ★★★ */}
       <Dialog
         open={dialogOpen}
-        onClose={handleDialogClose} // 배경 클릭이나 ESC 키로 닫힐 때 호출
+        onClose={handleDialogClose}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
