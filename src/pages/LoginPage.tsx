@@ -161,7 +161,7 @@ const LoginPage = () => {
             }}
         >
             <Stack spacing={2.5}>
-            <Typography variant="h4" component="h1" align="center" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h4" component="h1" align="center" sx={{ fontWeight: 'bold' }} onClick={() => navigate('/agent')}>
                 AI 템플릿 만들기
             </Typography>
 
