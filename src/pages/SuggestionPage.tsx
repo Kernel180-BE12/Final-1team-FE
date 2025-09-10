@@ -412,7 +412,7 @@ export default function SuggestionPage() {
         let isAutoCorrectionTriggered = false;
 
         try {
-            const res = await fetch('http://15.164.102.187:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState }) });
+            const res = await fetch('https://15.164.102.187:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState }) });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ detail: res.statusText }));
                 throw new Error(errorData.detail || '서버에서 오류가 발생했습니다.');
