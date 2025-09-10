@@ -413,7 +413,7 @@ export default function SuggestionPage() {
         let isAutoCorrectionTriggered = false;
 
         try {
-            const res = await fetch('/api/chat', {
+            const res = await fetch('/api/template/create-template', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, state: currentState })
