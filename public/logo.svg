@@ -1,0 +1,35 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 
+        SVG 코드 설명:
+        - stroke="#1E293B": 외곽선 색상 (진한 네이비 )
+        - stroke-width="6": 외곽선 굵기
+        - stroke-linecap="round", stroke-linejoin="round": 선의 끝과 모서리를 부드럽게 처리
+        - fill="...": 내부 채우기 색상
+    -->
+
+    <!-- 몸통 (연한 하늘색) -->
+    <path d="M25 90C25 85 30 80 40 80H60C70 80 75 85 75 90Z" fill="#E0F2FE" stroke="#1E293B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 머리 (연한 하늘색) -->
+    <path d="M85 55C85 35 70 20 50 20C30 20 15 35 15 55V65H85V55Z" fill="#E0F2FE" stroke="#1E293B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 머리 위 하이라이트 (밝은 파란색) -->
+    <path d="M35 26C35 23 38 21 42 21H58C62 21 65 23 65 26V30H35V26Z" fill="#7DD3FC" stroke="#1E293B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 안테나 (진한 네이비) -->
+    <line x1="50" y1="20" x2="50" y2="12" stroke="#1E293B" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="50" cy="8" r="4" fill="#1E293B"/>
+    
+    <!-- 왼쪽 귀 (연한 하늘색) -->
+    <path d="M15 50C11 50 8 53 8 57V63C8 67 11 70 15 70" fill="#E0F2FE" stroke="#1E293B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 오른쪽 귀 (연한 하늘색) -->
+    <path d="M85 50C89 50 92 53 92 57V63C92 67 89 70 85 70" fill="#E0F2FE" stroke="#1E293B" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- 눈 (진한 네이비) -->
+    <rect x="35" y="45" width="8" height="14" rx="4" fill="#1E293B"/>
+    <rect x="57" y="45" width="8" height="14" rx="4" fill="#1E293B"/>
+    
+    <!-- 입 (진한 네이비) -->
+    <rect x="42" y="68" width="16" height="6" rx="3" fill="#1E293B"/>
+</svg>
