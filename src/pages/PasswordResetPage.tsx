@@ -160,9 +160,11 @@ const PasswordResetPage = () => {
     <ThemeProvider theme={interactiveTheme}>
         <CssBaseline />
         <GlobalStyles styles={`
-            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap');
-            @keyframes animated-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-            body { background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); background-size: 400% 400%; animation: animated-gradient 15s ease infinite; }
+            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap' );
+            
+            body { 
+                background-color: #f5f5fa; /* 새벽의 안개 */
+            }
         `} />
         <Box 
             sx={{ 

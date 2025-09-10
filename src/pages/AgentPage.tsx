@@ -108,9 +108,12 @@ const AgentPage = () => {
     <ThemeProvider theme={interactiveTheme}>
         <CssBaseline />
         <GlobalStyles styles={`
-            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap');
-            @keyframes animated-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-            body { background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); background-size: 400% 400%; animation: animated-gradient 15s ease infinite; }
+            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap' );
+            
+            body { 
+                background-color: #1a202c; /* 예시: 옵션 1 적용 */
+                transition: background-color 0.5s ease; /* 배경색이 부드럽게 바뀌는 효과 (선택사항) */
+            }
         `} />
         <Box 
             sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', p: 4 }}
