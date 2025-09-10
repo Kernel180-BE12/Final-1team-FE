@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Paper, Typography, Avatar } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
