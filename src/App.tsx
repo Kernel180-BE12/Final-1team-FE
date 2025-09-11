@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate,} from 'react-router-dom';
 
-import PublicLayout from './components/PublicLayout';
-import DashboardLayout from './components/DashboardLayout';
+import PublicLayout from './components/layout/PublicLayout';
+import DashboardLayout from './components/layout/DashboardLayout';
 import PrivateRoute from './components/layout/PrivateRoute';
 
 import LoginPage from './pages/LoginPage';
@@ -12,6 +12,7 @@ import MyTemplatesPage from './pages/MyTemplatesPage';
 import ContactsPage from './pages/ContactsPage';
 import SpacesPage from './pages/SpacesPage'
 import PasswordResetPage from './pages/PasswordResetPage';
+import MyInfoPage from './pages/MyInfoPage';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/suggestion" element={<SuggestionPage />} />
             <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/spaces" element={<SpacesPage />} />
+            <Route path="/my-info" element={<MyInfoPage />} />
           </Route>
         </Route>
         

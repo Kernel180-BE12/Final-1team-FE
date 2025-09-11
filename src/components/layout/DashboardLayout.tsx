@@ -25,7 +25,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import useAuthStore from '../store/useAuthStore';
+import useAuthStore from '../../store/useAuthStore';
 
 
 const mainSidebarWidth = 80;
@@ -75,6 +75,12 @@ const DashboardLayout = () => {
   };
   const handleProfileMenuClose = () => {
     setProfileMenuAnchor(null);
+  };
+
+  // ★ 3. "내 정보" 페이지로 이동하는 함수를 만듭니다. ★
+  const handleGoToMyInfo = () => {
+    handleProfileMenuClose(); // 메뉴를 먼저 닫고
+    navigate('/my-info');     // /my-info 경로로 이동
   };
 
   // --- 로그아웃 핸들러 ---
@@ -128,8 +134,12 @@ const DashboardLayout = () => {
 
           {/* 3. 오른쪽 공간을 채우는 보이지 않는 스페이서 */}
           <Box sx={{ flexGrow: 1 }} />
+{/* 1. 사용자 이름을 보여주는 Typography를 추가합니다. */}
+          <Typography variant="subtitle1" sx={{ mr: 1.5 }}>
+            {user?.username}님
+          </Typography>
 
-          {/* ★ 9. Avatar를 클릭 가능하게 만듭니다. */}
+          {/* 2. 기존 Avatar를 그대로 사용하여 클릭 이벤트를 처리합니다. */}
           <IconButton onClick={handleProfileMenuClick} size="small">
             <Avatar sx={{ bgcolor: 'primary.main' }}>
               {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
@@ -156,7 +166,7 @@ const DashboardLayout = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <MenuItem onClick={handleProfileMenuClose}>
+        <MenuItem onClick={handleGoToMyInfo}>
           <ListItemIcon>
             <AccountCircleIcon fontSize="small" />
           </ListItemIcon>
