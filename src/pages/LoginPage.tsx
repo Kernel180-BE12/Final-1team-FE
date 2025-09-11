@@ -190,10 +190,10 @@ const LoginPage = () => {
                 로그인
             </Button>
 
-            { <Divider sx={{ my: 2 }}>또는</Divider> }
+            {/* { <Divider sx={{ my: 2 }}>또는</Divider> }
             { <Stack direction="row" spacing={2} justifyContent="center">
                 <IconButton sx={{ width: 56, height: 56, backgroundColor: '#FEE500', '&:hover': { backgroundColor: '#f0d900' } }}>K</IconButton>
-            </Stack> }
+            </Stack> } */}
 
             <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
                 <Button size="small" onClick={handleSignupClick}>회원가입</Button>
