@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
     Box,
-    Tab,
-    Tabs,
     TextField,
     MenuItem,
     Button,
@@ -20,13 +18,11 @@ import {
     IconButton,
     ListItemText,
 } from '@mui/material';
-// [수정] SelectChangeEvent는 더 이상 직접 사용하지 않으므로 제거해도 됩니다.
-// import type { SelectChangeEvent } from '@mui/material'; 
 import AddIcon from '@mui/icons-material/Add';
 
+// 데이터는 이 컴포넌트가 직접 관리하거나 props로 받아올 수 있습니다.
 const tagOptions = ['#재직자', '#퇴사자', '#프리랜서', '#외부인', '#주주'];
 const authorityOptions = ['권한그룹전체', '최고관리자', '전자문서관리자', '구성원', '접근권한없음'];
-
 const members = [
   { id: 1, name: '홍길동', permission: '최고관리자', status: '연결됨', tags: ['#재직자', '#주주'] },
   { id: 2, name: '김철수', permission: '구성원', status: '연결됨', tags: ['#재직자'] },
@@ -36,17 +32,11 @@ const members = [
   { id: 6, name: '차범근', permission: '접근권한없음', status: '만료됨', tags: ['#퇴사자'] },
 ];
 
-const InviteSettingsContent = () => {
-  const [tabValue, setTabValue] = useState(0);
+const MembersContent = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedAuthority, setSelectedAuthority] = useState<string>('권한그룹전체');
-
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -57,13 +47,11 @@ const InviteSettingsContent = () => {
     setPage(0);
   };
 
-  // [수정] 이벤트 타입을 React.ChangeEvent<HTMLInputElement>로 받고, value를 타입 단언합니다.
   const handleTagChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setSelectedTags(typeof value === 'string' ? value.split(',') : (value as string[]));
   };
 
-  // [수정] 이벤트 타입을 React.ChangeEvent<HTMLInputElement>로 받고, value를 타입 단언합니다.
   const handleAuthorityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedAuthority(event.target.value as string);
   };
@@ -77,14 +65,7 @@ const InviteSettingsContent = () => {
   }, [selectedTags, selectedAuthority]);
 
   return (
-    <Box>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="permission settings tabs">
-          <Tab label="구성원" />
-          <Tab label="권한관리" />
-        </Tabs>
-      </Box>
-
+    <>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TextField
@@ -98,23 +79,17 @@ const InviteSettingsContent = () => {
                     multiple: true,
                     renderValue: (selected) => {
                         const s = selected as string[];
-                        if (s.length === 0) {
-                            // 플레이스홀더처럼 보이게 하기 위해 빈 값을 반환
-                            // 라벨은 TextField가 알아서 처리해줍니다.
-                            return '';
-                        }
+                        if (s.length === 0) return '';
                         return s.join(', ');
                     },
                 }}
             >
                 {tagOptions.map((tag) => (
                     <MenuItem key={tag} value={tag}>
-                        
                         <ListItemText primary={tag} />
                     </MenuItem>
                 ))}
             </TextField>
-
             <TextField
                 select
                 label="권한 그룹"
@@ -188,8 +163,8 @@ const InviteSettingsContent = () => {
           labelRowsPerPage="줄 수:"
         />
       </Paper>
-    </Box>
+    </>
   );
 };
 
-export default InviteSettingsContent;
+export default MembersContent;
