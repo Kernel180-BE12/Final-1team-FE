@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // '/api'로 시작하는 모든 요청을 아래 target 주소로 전달합니다.
       '/api': {
-        target: 'http://15.164.102.187:8080', // 백엔드 서버 주소
+        target: 'http://13.209.3.58:8080', // 백엔드 서버 주소
         changeOrigin: true, // 주소의 도메인을 바꿔주는 옵션
         rewrite: (path) => path.replace(/^\/api/, ''), // '/api' 부분을 지우고 요청
       },
