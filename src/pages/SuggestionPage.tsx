@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, CircularProgress, Stack, ThemeProvider, createTheme} from '@mui/material';
+import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, CircularProgress, Stack, ThemeProvider, createTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
@@ -463,7 +463,11 @@ export default function SuggestionPage() {
         let isAutoCorrectionTriggered = false;
 
         try {
-            const res = await fetch('http://13.209.3.58:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState } ) });
+            const res = await fetch('/api/template/create-template', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, state: currentState })
+            });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ detail: res.statusText }));
                 throw new Error(errorData.detail || '서버에서 오류가 발생했습니다.');
