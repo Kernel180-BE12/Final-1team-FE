@@ -1,6 +1,6 @@
 import { AppBar, Box, Button, Toolbar, Typography, createTheme, ThemeProvider, CssBaseline, GlobalStyles } from '@mui/material';
 import { Outlet, useNavigate } from 'react-router-dom';
-import useAuthStore from '../store/useAuthStore'; 
+import useAuthStore from '../../store/useAuthStore'; 
 
 
 const interactiveTheme = createTheme({

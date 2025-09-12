@@ -9,7 +9,7 @@ import {
     Stack, 
     Paper, 
     GlobalStyles, 
-    Divider 
+    // Divider 
 } from '@mui/material';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import { useNavigate } from 'react-router-dom';
@@ -81,11 +81,11 @@ const RegisterPage = () => {
                             AI 템플릿 만들기
                         </Typography>
                         
-                        <Typography variant="h5" sx={{ fontWeight: 'medium' }}>
+                        <Typography variant="h5" sx={{ fontWeight: 'medium', mb: 2 }}>
                             편하게 AI로 템플릿을 생성해보세요.
                         </Typography>
 
-                        <Button
+                        {/* <Button
                             variant="contained" 
                             size="large" 
                             fullWidth
@@ -96,7 +96,7 @@ const RegisterPage = () => {
                             }}
                         >
                             카카오로 시작하기
-                        </Button>
+                        </Button> */}
                         
                         <Button
                             variant="outlined"
@@ -107,23 +107,23 @@ const RegisterPage = () => {
                             sx={{
                                 py: 1.5,
                                 '&:hover': { transform: 'scale(1.03) translateY(-2px)' },
+                                mb: 2,
                             }}
                         >
                             회원가입 하기
                         </Button>
 
-                        <Divider sx={{ width: '100%', my: 1 }} />
+                        {/* <Divider sx={{ width: '100%', my: 1 }} /> */}
 
-                        <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, fontSize: '0.8rem' }}>
+                            가입을 진행하시면 전자문서 서비스 이용약관 및 개인정보 수집 이용에 동의하는 것으로 간주합니다.
+                        </Typography>
+                        <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" >
                             <Typography variant="body2" color="text.secondary">
                                 계정이 있으신가요?
                             </Typography>
                             <Button size="small" onClick={handleLoginClick} sx={{fontWeight: 'bold'}}>로그인</Button>
                         </Stack>
-
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, fontSize: '0.8rem' }}>
-                            가입을 진행하시면 전자문서 서비스 이용약관 및 개인정보 수집 이용에 동의하는 것으로 간주합니다.
-                        </Typography>
                     </Box>
                 </Paper>
             </Box>

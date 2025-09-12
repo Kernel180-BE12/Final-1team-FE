@@ -17,16 +17,15 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CorporateFareIcon from '@mui/icons-material/CorporateFare';
 
 // 임시 데이터 (나중에 API로 받아올 데이터)
 const spaces = [
-  { id: 1, name: '커널아카데미', role: '최고 관리자', lastVisited: new Date('2025-09-02T10:00:00'), createdAt: new Date('2024-01-15T09:00:00') },
+  { id: 1, name: '커널 아카데미', role: '최고 관리자', lastVisited: new Date('2025-09-02T10:00:00'), createdAt: new Date('2024-01-15T09:00:00') },
   { id: 2, name: '프론트엔드 스터디', role: '멤버', lastVisited: new Date('2025-08-28T15:30:00'), createdAt: new Date('2024-05-20T14:00:00') },
   { id: 3, name: '알고리즘 챌린지', role: '멤버', lastVisited: new Date('2025-08-30T09:00:00'), createdAt: new Date('2023-11-10T18:00:00') },
-  { id: 4, name: '커널아카데미3', role: '최고 관리자', lastVisited: new Date('2025-09-01T11:00:00'), createdAt: new Date('2024-08-01T12:00:00') },
 ];
 
 type SortOptionKey = 'recent' | 'name-asc' | 'name-desc' | 'created-asc';
@@ -45,25 +44,47 @@ interface AllSpacesContentProps {
 const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<SortOptionKey>('recent');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
+  
+  const [sortMenuAnchorEl, setSortMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [itemMenuAnchorEl, setItemMenuAnchorEl] = useState<null | HTMLElement>(null);
+  
+  const [openedMenuSpaceId, setOpenedMenuSpaceId] = useState<null | number>(null);
 
-  // [추가] 스페이스 아이템 클릭 시 실행될 핸들러 함수
   const handleSpaceItemClick = (spaceName: string) => {
     alert(`'${spaceName}' 스페이스를 클릭했습니다. 상세 페이지로 이동합니다.`);
   };
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+  // --- 정렬 메뉴 핸들러 ---
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortMenuAnchorEl(event.currentTarget);
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
+  const handleSortMenuClose = () => {
+    setSortMenuAnchorEl(null);
   };
 
   const handleSortSelect = (option: SortOptionKey) => {
     setSortOption(option);
-    handleMenuClose();
+    handleSortMenuClose();
+  };
+
+  // --- 아이템 '더보기' 메뉴 핸들러 ---
+  const handleItemMenuOpen = (event: React.MouseEvent<HTMLElement>, spaceId: number) => {
+    event.stopPropagation(); 
+    setItemMenuAnchorEl(event.currentTarget);
+    setOpenedMenuSpaceId(spaceId);
+  };
+
+  const handleItemMenuClose = (event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    setItemMenuAnchorEl(null);
+    setOpenedMenuSpaceId(null);
+  };
+
+  const handleEditClick = (event: React.MouseEvent, spaceName: string) => {
+    event.stopPropagation();
+    alert(`'${spaceName}' 스페이스 수정 시작!`);
+    handleItemMenuClose();
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +147,7 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
       <Box sx={{ border: '1px solid #e0e0e0', borderRadius: '8px', p: 3 }}>
         <Box
           sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor: 'pointer', width: 'fit-content' }}
-          onClick={handleMenuOpen}
+          onClick={handleSortMenuOpen}
         >
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {currentSortLabel}
@@ -134,7 +155,8 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
           <KeyboardArrowDownIcon sx={{ color: 'text.secondary', fontSize: '16px' }} />
         </Box>
 
-        <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+        {/* 정렬 옵션 메뉴 */}
+        <Menu anchorEl={sortMenuAnchorEl} open={Boolean(sortMenuAnchorEl)} onClose={handleSortMenuClose}>
           {sortOptions.map(option => (
             <MenuItem
               key={option.key}
@@ -151,7 +173,6 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
             {sortedAndFilteredSpaces.map((space, index) => (
               <React.Fragment key={space.id}>
                 <ListItem
-                  // [수정] onClick 이벤트 핸들러 추가
                   onClick={() => handleSpaceItemClick(space.name)}
                   sx={{
                     py: 2,
@@ -161,8 +182,12 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
                     cursor: 'pointer',
                   }}
                   secondaryAction={
-                    <IconButton edge="end" aria-label="go-to-space">
-                      <ArrowForwardIosIcon sx={{ fontSize: '16px' }} />
+                    <IconButton
+                      edge="end"
+                      aria-label="more-actions"
+                      onClick={(e) => handleItemMenuOpen(e, space.id)}
+                    >
+                      <MoreVertIcon />
                     </IconButton>
                   }
                 >
@@ -191,6 +216,23 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
             </Typography>
           </Box>
         )}
+
+        {/* 아이템별 '더보기' 메뉴 */}
+        <Menu
+          anchorEl={itemMenuAnchorEl}
+          open={Boolean(itemMenuAnchorEl)}
+          // onClose={handleItemMenuClose}
+        >
+          <MenuItem onClick={(e) => {
+            const currentSpace = spaces.find(s => s.id === openedMenuSpaceId);
+            if (currentSpace) {
+              handleEditClick(e, currentSpace.name);
+            }
+          }}>
+            수정하기
+          </MenuItem>
+          {/* <MenuItem onClick={handleItemMenuClose}>삭제하기</MenuItem> */}
+        </Menu>
       </Box>
     </Box>
   );

@@ -1,65 +1,62 @@
 import { useState } from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import AccountBoxIcon from '@mui/icons-material/AccountBox';
-import RememberMeIcon from '@mui/icons-material/RememberMe';
-import SettingsIcon from '@mui/icons-material/Settings';
-
+import { Box, Typography, Tab, Tabs,  } from '@mui/material';
 import AllSpacesContent from './components/AllSpacesContent';
-import InviteSettingsContent from './components/InviteSettingsContent';
-import AccountManagementContent from './components/AccountManagementContent';
-
-import SubSidebar from '../../components/layout/SubSidebar';
+import MembersContent from './components/MembersContent';
+import PermissionManagementContent from './components/PermissionManagementContent';
 import CreateSpaceModal from '../../components/modals/CreateSpaceModal';
 
-const subMenuItems = [
-  { key: 'all-spaces', text: '전체 스페이스', icon: <AccountBoxIcon /> },
-  { key: 'invites', text: '초대 및 권한 설정', icon: <RememberMeIcon /> },
-  { key: 'account-settings', text: '계정 관리', icon: <SettingsIcon /> },
-];
-
 const SpacesPage = () => {
-  const [isSubSidebarOpen, setSubSidebarOpen] = useState(true);
-  const [selectedMenuKey, setSelectedMenuKey] = useState('all-spaces');
+  // 1. SubSidebar 관련 상태(isSubSidebarOpen, selectedMenuKey)를 탭 상태로 변경합니다.
+  const [currentTab, setCurrentTab] = useState('all-spaces');
   const [isModalOpen, setModalOpen] = useState(false);
 
-  const renderMainContent = () => {
-    switch (selectedMenuKey) {
+  // 2. 탭 변경을 처리하는 핸들러 함수를 추가합니다.
+  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    setCurrentTab(newValue);
+  };
+
+  const getHeaderTitle = () => {
+    // 2. 각 탭에 맞는 헤더 타이틀을 반환합니다.
+    switch (currentTab) {
       case 'all-spaces':
-        return <AllSpacesContent onAddSpace={() => setModalOpen(true)} />;
-      case 'invites':
-        return <InviteSettingsContent />;
-      case 'account-settings':
-        return <AccountManagementContent />;
+        return '전체 스페이스';
+      case 'members':
+        return '구성원';
+      case 'permissions':
+        return '권한 관리';
       default:
-        return null;
+        return '';
     }
   };
 
-  const selectedMenuText = subMenuItems.find(item => item.key === selectedMenuKey)?.text || '';
-
   return (
     <>
-      <Box sx={{ display: 'flex' }}>
-        <SubSidebar
-          isOpen={isSubSidebarOpen}
-          menuItems={subMenuItems}
-          selectedMenuKey={selectedMenuKey}
-          onMenuClick={setSelectedMenuKey}
-        />
-        <Box sx={{ flexGrow: 1, p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
-            <IconButton onClick={() => setSubSidebarOpen(!isSubSidebarOpen)}>
-              {isSubSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-            </IconButton>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-              {selectedMenuText}
-            </Typography>
-          </Box>
-          {renderMainContent()}
+      <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            {getHeaderTitle()}
+          </Typography>
+        </Box>
+
+        {/* 3. Tabs 컴포넌트를 새로운 구조에 맞게 수정합니다. */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={currentTab} onChange={handleTabChange} aria-label="스페이스 관리 탭">
+            <Tab label="전체 스페이스" value="all-spaces" />
+            <Tab label="구성원" value="members" />
+            <Tab label="권한 관리" value="permissions" />
+          </Tabs>
+        </Box>
+
+        {/* 4. 탭 값에 따라 3가지 다른 콘텐츠를 보여줍니다. */}
+        <Box sx={{ pt: 3, flexGrow: 1 }}>
+          {currentTab === 'all-spaces' && (
+            <AllSpacesContent onAddSpace={() => setModalOpen(true)} />
+          )}
+          {currentTab === 'members' && <MembersContent />}
+          {currentTab === 'permissions' && <PermissionManagementContent />}
         </Box>
       </Box>
+
       <CreateSpaceModal open={isModalOpen} onClose={() => setModalOpen(false)} />
     </>
   );

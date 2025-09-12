@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, CircularProgress, Stack, ThemeProvider, createTheme, Divider } from '@mui/material';
+import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, CircularProgress, Stack, ThemeProvider, createTheme} from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
@@ -48,7 +48,7 @@ const STYLE_SKELETONS: { [key: string]: StructuredTemplate } = {
 };
 
 // --- 스타일 컴포넌트 ---
-const Placeholder = styled('span')({
+const Placeholder = styled('span' )({
     color: '#3b82f6',
     fontWeight: 'bold',
     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -132,7 +132,19 @@ const InteractiveCard = styled(Paper)({});
 
 // --- 유틸리티 및 헬퍼 컴포넌트 ---
 const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: string) => void }) => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', textAlign: 'center', p: 3, color: 'text.secondary' }}>
+    // ★★★ 이 Box의 sx에서 height: '100%'를 제거합니다. ★★★
+    <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        // height: '100%', // 이 줄을 제거하거나 주석 처리합니다.
+        textAlign: 'center',
+        p: 3,
+        color: 'text.secondary',
+        // 추가: flex 컨테이너가 남은 공간을 모두 차지하도록 설정
+        flex: 1
+    }}>
         <Avatar sx={{ width: 72, height: 72, mb: 2, backgroundColor: 'rgba(255,255,255,0.7)' }}>
             <SmartToyOutlinedIcon sx={{ fontSize: 36, color: '#475569' }} />
         </Avatar>
@@ -153,7 +165,6 @@ const renderTemplateWithPlaceholders = (text: string) => (
     </>
 );
 
-// ★★★ IPhoneKakaoPreview 컴포넌트 최종 수정 ★★★
 const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
     const { title, body, image_url, buttons, image_layout } = template;
     const isBackgroundLayout = image_layout === 'background' && image_url;
@@ -255,7 +266,6 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
                 </svg>
-                {/*<Typography sx={{ fontSize: '17px', fontWeight: '600' }}>자버 채널</Typography>*/}
                 <Box sx={{ display: 'flex', gap: '16px' }}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
@@ -353,31 +363,71 @@ const TemplateSelector = ({ msg, onTemplateSelect, onConfirm, onSendMessage }: {
     return (
         <Paper elevation={0} sx={{ p: 2, mt: 1, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>{title}</Typography>
-            <Stack spacing={1} divider={isInitialRecommendation ? <Divider orientation="horizontal" flexItem /> : undefined}>
+            <Stack spacing={1}>
                 {msg.templates.map((template, index) => {
-                    let buttonText: React.ReactNode = template.body.split('\n').slice(0, 2).join('\n');
-                    if (template.body.split('\n').length > 2) buttonText = <>{buttonText}...</>;
-                    if (isFinalLayoutChoice) {
-                        buttonText = template.image_layout === 'header' ? '헤더형 (Header)' : '배경형 (Background)';
-                    }
+                    const isSelected = msg.selected_template_id === index;
+                    const buttonText = template.title;
+
                     return (
-                        <Button key={index} variant={msg.selected_template_id === index ? "contained" : "outlined"} onClick={() => onTemplateSelect(msg.id, index, template)} sx={{ justifyContent: 'flex-start', textAlign: 'left', textTransform: 'none', padding: '8px 12px', lineHeight: 1.4 }} >
-                            <Typography variant="body2" component="span" sx={{ display: 'block', whiteSpace: 'pre-wrap' }}>{buttonText}</Typography>
+                        <Button
+                            key={index}
+                            variant={isSelected ? "contained" : "outlined"}
+                            onClick={() => onTemplateSelect(msg.id, index, template)}
+                            sx={{
+                                justifyContent: 'flex-start',
+                                textAlign: 'left',
+                                textTransform: 'none',
+                                padding: '10px 16px',
+                                lineHeight: 1.4,
+                                fontWeight: 500,
+                                ...(!isSelected && {
+                                    borderColor: 'primary.main',
+                                    color: 'primary.main',
+                                    borderWidth: '1.5px',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                                    }
+                                })
+                            }}
+                        >
+                            {renderTemplateWithPlaceholders(buttonText)}
                         </Button>
                     );
                 })}
             </Stack>
             <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                 {isInitialRecommendation && (
-                    <Button variant="outlined" onClick={() => onSendMessage("새로 만들기")} sx={{ flexGrow: 1 }}>새로 만들기</Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => onSendMessage("새로 만들기")}
+                        sx={{
+                            flexGrow: 1,
+                            backgroundColor: '#f97316',
+                            '&:hover': {
+                                backgroundColor: '#ea580c'
+                            },
+                        }}
+                    >
+                        새로 만들기
+                    </Button>
                 )}
-                <Button variant="contained" onClick={() => onConfirm(msg.id, isFinalLayoutChoice)} disabled={msg.selected_template_id === null || msg.selected_template_id === undefined} sx={{ flexGrow: 1 }} >
-                    {isFinalLayoutChoice ? '이 레이아웃으로 최종 선택' : '선택한 템플릿으로 진행'}
+                <Button
+                    variant="contained"
+                    onClick={() => onConfirm(msg.id, isFinalLayoutChoice)}
+                    disabled={msg.selected_template_id === null || msg.selected_template_id === undefined}
+                    sx={{ flexGrow: 1,
+                        backgroundColor: '#14b8a6',
+                        '&:hover': {
+                            backgroundColor: '#0d9488'
+                        }}}
+                >
+                    선택한 템플릿으로 진행
                 </Button>
             </Stack>
         </Paper>
     );
 };
+
 
 // --- 메인 UI 컴포넌트 ---
 export default function SuggestionPage() {
@@ -413,11 +463,7 @@ export default function SuggestionPage() {
         let isAutoCorrectionTriggered = false;
 
         try {
-            const res = await fetch('/api/template/create-template', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, state: currentState })
-            });
+            const res = await fetch('http://13.209.3.58:8000/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, state: currentState } ) });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ detail: res.statusText }));
                 throw new Error(errorData.detail || '서버에서 오류가 발생했습니다.');
@@ -445,7 +491,7 @@ export default function SuggestionPage() {
 
             const hasTemplates = templatesForMessage.length > 0;
             const newBotMessage: BotResponse = {
-                id: Date.now() + 1,
+                id: Date.now( ) + 1,
                 type: 'bot',
                 content: data.response,
                 timestamp: getCurrentTime(),
@@ -528,9 +574,10 @@ export default function SuggestionPage() {
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
 
+
     return (
         <ThemeProvider theme={customTheme}>
-            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', gap: 3, p: 3, height: '100vh', boxSizing: 'border-box' }}>
+            <Box sx={{ display: 'flex', gap: 3, height: '100%' }}>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <Box sx={{ flex: 1, overflowY: 'auto', p: 2, minHeight: 0, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
@@ -569,7 +616,18 @@ export default function SuggestionPage() {
                         </Box>
                         <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>
                             <Paper component="form" onSubmit={e => { e.preventDefault(); handleSendMessage(inputValue); }} sx={{ p: '4px 8px', display: 'flex', alignItems: 'center', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.4)', background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'none', boxShadow: 'none' }}>
-                                <TextField fullWidth multiline maxRows={5} variant="standard" placeholder="메시지를 입력하거나, 예시를 클릭해보세요..." value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(inputValue); } }} sx={{ ml: 1, flex: 1 }} InputProps={{ disableUnderline: true }} />
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    maxRows={5}
+                                    variant="standard"
+                                    placeholder="메시지를 입력하거나, 예시를 클릭해보세요..."
+                                    value={inputValue}
+                                    onChange={e => setInputValue(e.target.value)}
+                                    onKeyPress={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(inputValue); } }}
+                                    sx={{ ml: 1, flex: 1 }}
+                                    InputProps={{ disableUnderline: true }}
+                                />
                                 <IconButton color="primary" type="submit" sx={{ p: '10px' }} disabled={!inputValue.trim() || isLoading}>
                                     {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
                                 </IconButton>
@@ -577,7 +635,14 @@ export default function SuggestionPage() {
                         </Box>
                     </InteractiveCard>
                 </Box>
-                <Box sx={{ width: '360px', minWidth: '360px', height: 'calc(100vh - 48px)', display: { xs: 'none', md: 'flex' }, flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <Box sx={{
+                    width: '360px',
+                    minWidth: '360px',
+                    display: { xs: 'none', md: 'flex' },
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
                     <IPhoneMockup>
                         {livePreviewTemplate ? <IPhoneKakaoPreview template={livePreviewTemplate} /> : (
                             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: 'text.secondary' }}>
@@ -590,4 +655,3 @@ export default function SuggestionPage() {
         </ThemeProvider>
     );
 }
-
