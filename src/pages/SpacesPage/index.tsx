@@ -11,7 +11,7 @@ const SpacesPage = () => {
   const [isModalOpen, setModalOpen] = useState(false);
 
   // 2. 탭 변경을 처리하는 핸들러 함수를 추가합니다.
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
   };
 
