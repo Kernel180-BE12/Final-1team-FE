@@ -75,8 +75,7 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
     setOpenedMenuSpaceId(spaceId);
   };
 
-  const handleItemMenuClose = (event?: React.MouseEvent) => {
-    event?.stopPropagation();
+  const handleItemMenuClose = (_event?: unknown, _reason?: "backdropClick" | "escapeKeyDown") => {
     setItemMenuAnchorEl(null);
     setOpenedMenuSpaceId(null);
   };
@@ -221,7 +220,7 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
         <Menu
           anchorEl={itemMenuAnchorEl}
           open={Boolean(itemMenuAnchorEl)}
-          // onClose={handleItemMenuClose}
+          onClose={handleItemMenuClose}
         >
           <MenuItem onClick={(e) => {
             const currentSpace = spaces.find(s => s.id === openedMenuSpaceId);

@@ -26,7 +26,7 @@ const MyInfoPage = () => {
         setSnackbarOpen(true);
     };
 
-    const handleSnackbarClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
         // 사용자가 Snackbar 외부를 클릭해서 닫는 것은 허용합니다.
         if (reason === 'clickaway') {
             return;
