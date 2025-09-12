@@ -221,7 +221,7 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ onAddSpace }) => {
         <Menu
           anchorEl={itemMenuAnchorEl}
           open={Boolean(itemMenuAnchorEl)}
-          onClose={handleItemMenuClose}
+          // onClose={handleItemMenuClose}
         >
           <MenuItem onClick={(e) => {
             const currentSpace = spaces.find(s => s.id === openedMenuSpaceId);
