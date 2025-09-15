@@ -47,57 +47,52 @@ const spaces = [
 const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout, user } = useAuthStore(); // ★ 4. logout 함수와 user 정보를 가져옵니다.
+  const { logout, user } = useAuthStore();
 
-  // --- 스페이스 메뉴 상태 관리 ---
   const [spaceMenuAnchor, setSpaceMenuAnchor] = useState<null | HTMLElement>(null);
   const isSpaceMenuOpen = Boolean(spaceMenuAnchor);
-  const [currentSpaceName, setCurrentSpaceName] = useState('커널 아카데미'); // ★ 5. 현재 스페이스 이름을 기억할 state
+  const [currentSpaceName, setCurrentSpaceName] = useState('커널 아카데미');
 
-  // --- 프로필 메뉴 상태 관리 ---
-  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null); // ★ 6. 프로필 메뉴용 state
+  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
   const isProfileMenuOpen = Boolean(profileMenuAnchor);
 
-  // --- 스페이스 메뉴 핸들러 ---
   const handleSpaceMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setSpaceMenuAnchor(event.currentTarget);
   };
   const handleSpaceMenuClose = (spaceName?: string) => {
     setSpaceMenuAnchor(null);
     if (spaceName) {
-      setCurrentSpaceName(spaceName); // 선택한 스페이스 이름으로 업데이트
+      setCurrentSpaceName(spaceName);
     }
   };
 
-  // --- 프로필 메뉴 핸들러 ---
-  const handleProfileMenuClick = (event: React.MouseEvent<HTMLElement>) => { // ★ 7. 프로필 메뉴용 핸들러
+  const handleProfileMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setProfileMenuAnchor(event.currentTarget);
   };
   const handleProfileMenuClose = () => {
     setProfileMenuAnchor(null);
   };
 
-  // ★ 3. "내 정보" 페이지로 이동하는 함수를 만듭니다. ★
   const handleGoToMyInfo = () => {
-    handleProfileMenuClose(); // 메뉴를 먼저 닫고
-    navigate('/my-info');     // /my-info 경로로 이동
+    handleProfileMenuClose();
+    navigate('/my-info');
   };
 
-  // --- 로그아웃 핸들러 ---
   const handleLogout = () => {
-    handleProfileMenuClose(); // 메뉴를 먼저 닫고
-    logout();               // 로그아웃 실행
+    handleProfileMenuClose();
+    logout();
     alert('로그아웃 되었습니다.');
     navigate('/login');
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    // ★ 1. 전체 레이아웃을 화면 높이에 꽉 채우고, 스크롤을 방지합니다.
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <AppBar 
         position="fixed" 
         sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1, // 사이드바 위에 위치
-          backgroundColor: 'rgba(255, 255, 255, 0.8)', // 반투명한 흰색
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
           backdropFilter: 'blur(8px)',
           color: '#333',
           boxShadow: 'none',
@@ -105,7 +100,6 @@ const DashboardLayout = () => {
         }}
       >
         <Toolbar>
-          {/* 로고 (Agent 페이지로 이동) */}
           <Typography
             variant="h6"
             noWrap
@@ -115,31 +109,19 @@ const DashboardLayout = () => {
           >
             AI 템플릿 만들기
           </Typography>
-
-          {/* 1. 왼쪽 공간을 채우는 보이지 않는 스페이서 */}
           <Box sx={{ flexGrow: 1 }} />
-
-          {/* 2. 이제 Typography 대신 Button을 사용합니다. */}
           <Button
             color="inherit"
             onClick={handleSpaceMenuClick}
             endIcon={<ArrowDropDownIcon />}
-            sx={{ 
-              textTransform: 'none', // 대문자 변환 방지
-              fontSize: '1.1rem',
-            }}
+            sx={{ textTransform: 'none', fontSize: '1.1rem' }}
           >
             {currentSpaceName}
           </Button>
-
-          {/* 3. 오른쪽 공간을 채우는 보이지 않는 스페이서 */}
           <Box sx={{ flexGrow: 1 }} />
-{/* 1. 사용자 이름을 보여주는 Typography를 추가합니다. */}
           <Typography variant="subtitle1" sx={{ mr: 1.5 }}>
             {user?.username}님
           </Typography>
-
-          {/* 2. 기존 Avatar를 그대로 사용하여 클릭 이벤트를 처리합니다. */}
           <IconButton onClick={handleProfileMenuClick} size="small">
             <Avatar sx={{ bgcolor: 'primary.main' }}>
               {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
@@ -148,7 +130,6 @@ const DashboardLayout = () => {
         </Toolbar>
       </AppBar>
 
-      {/* --- 스페이스 메뉴 --- */}
       <Menu anchorEl={spaceMenuAnchor} open={isSpaceMenuOpen} onClose={() => handleSpaceMenuClose()}>
         {spaces.map((space) => (
           <MenuItem key={space.id} onClick={() => handleSpaceMenuClose(space.name)}>
@@ -157,12 +138,10 @@ const DashboardLayout = () => {
         ))}
       </Menu>
 
-      {/* ★ 10. 프로필 메뉴를 추가합니다. --- */}
       <Menu
         anchorEl={profileMenuAnchor}
         open={isProfileMenuOpen}
         onClose={handleProfileMenuClose}
-        // 메뉴가 아바타 바로 아래 오른쪽에 나타나도록 위치 조정
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
@@ -181,7 +160,6 @@ const DashboardLayout = () => {
         </MenuItem>
       </Menu>
 
-      {/* 왼쪽 메인 Sidebar */}
       <Drawer
         variant="permanent"
         sx={{
@@ -190,12 +168,11 @@ const DashboardLayout = () => {
           [`& .MuiDrawer-paper`]: { width: mainSidebarWidth, boxSizing: 'border-box' },
         }}
       >
-        <Toolbar /> {/* Appbar와 높이를 맞추기 위한 빈 공간 */}
+        <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
             {mainMenuItems.map((item) => {
               const isActive = location.pathname === item.path;
-
               return (
                 <ListItem key={item.text} disablePadding>
                   <ListItemButton
@@ -205,7 +182,6 @@ const DashboardLayout = () => {
                       justifyContent: 'center',
                       height: 72,
                       px: 1,
-                      // ★ 4. isActive가 true일 때만 특별한 스타일을 적용합니다.
                       backgroundColor: isActive ? 'action.selected' : 'transparent',
                       '&:hover': {
                         backgroundColor: isActive ? 'action.selected' : 'action.hover',
@@ -215,7 +191,6 @@ const DashboardLayout = () => {
                     <ListItemIcon 
                       sx={{ 
                         minWidth: 'auto',
-                        // ★ 5. 아이콘 색상도 활성화 상태에 따라 변경합니다.
                         color: isActive ? 'primary.main' : 'inherit',
                       }}
                     >
@@ -227,7 +202,6 @@ const DashboardLayout = () => {
                         variant: 'caption',
                         sx: { 
                           mt: 0.5,
-                          // ★ 6. 텍스트 색상도 활성화 상태에 따라 변경합니다.
                           fontWeight: isActive ? 'bold' : 'regular',
                           color: isActive ? 'primary.main' : 'inherit',
                         },
@@ -241,10 +215,24 @@ const DashboardLayout = () => {
         </Box>
       </Drawer>
 
-      {/* 메인 콘텐츠 영역 */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f9fafb', minHeight: '100%' }}>
-        <Toolbar />
-        <Outlet />
+      {/* ★ 2. 메인 콘텐츠 영역을 수직 Flexbox 컨테이너로 만듭니다. */}
+      <Box component="main" sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          // backgroundColor: '#f9fafb' // 배경색은 유지
+      }}>
+        <Toolbar /> {/* AppBar와 동일한 높이의 공간 확보 */}
+        
+        {/* ★ 3. Outlet이 렌더링될 영역이 남은 공간을 모두 차지하도록 설정합니다. */}
+        <Box sx={{
+          flex: 1, // Toolbar를 제외한 모든 남은 공간을 차지
+          minHeight: 0, // Flexbox 높이 계산 오류 방지를 위한 필수 속성
+          p: 3, // 기존 패딩을 이곳으로 이동
+          backgroundColor: '#f9fafb' // 배경색을 이곳으로 이동
+        }}>
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );
