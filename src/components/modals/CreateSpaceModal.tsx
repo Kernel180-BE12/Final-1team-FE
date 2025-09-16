@@ -7,29 +7,27 @@ import {
   TextField,
   Button,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import apiClient from '../../api';
 
-// TypeScript를 위해, 이 컴포넌트가 받을 props의 타입을 정의합니다.
+// 부모로부터 받을 props 타입에 onSpaceCreated를 추가
 interface CreateSpaceModalProps {
   open: boolean;
   onClose: () => void;
+  onSpaceCreated: () => void;  // 스페이스 생성이 성공했을 때 호출될 함수
 }
 
-/**
- * @description 새로운 스페이스를 생성하는 팝업(모달) 컴포넌트입니다.
- * @param {object} props - React 컴포넌트 props
- * @param {boolean} props.open - 모달의 열림/닫힘 상태
- * @param {() => void} props.onClose - 모달을 닫을 때 호출되는 함수
- * @returns {React.ReactElement} CreateSpaceModal 컴포넌트
- */
-const CreateSpaceModal = ({ open, onClose }: CreateSpaceModalProps) => {
+const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSpaceCreated }) => {
   const [spaceName, setSpaceName] = useState('');
   const [ownerName, setOwnerName] = useState('');
-  const [ownerNameError, setOwnerNameError] = useState('');
   const [spaceNameError, setSpaceNameError] = useState('');
+  const [ownerNameError, setOwnerNameError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // ★ 2. API 통신 로딩 상태를 관리할 state
 
-  const handleCreate = () => {
+  // async 키워드를 추가하여 비동기 함수로 만듦
+  const handleCreate = async () => {
     let isValid = true;
     if (!spaceName.trim()) {
       setSpaceNameError('스페이스 이름을 입력해주세요.');
@@ -38,7 +36,6 @@ const CreateSpaceModal = ({ open, onClose }: CreateSpaceModalProps) => {
       setSpaceNameError('');
     }
 
-    // [추가] 대표자 이름 유효성 검사
     if (!ownerName.trim()) {
       setOwnerNameError('대표자 이름을 입력해주세요.');
       isValid = false;
@@ -47,13 +44,30 @@ const CreateSpaceModal = ({ open, onClose }: CreateSpaceModalProps) => {
     }
 
     if (!isValid) return;
-    // TODO: 여기에 실제로 API를 호출하는 로직을 추가합니다.
-    // 예: axios.post('/spaces', { name: spaceName });
-    console.log('생성할 스페이스 이름:', spaceName, ownerName );
-    handleClose();
+
+    // ★ 3. 실제 API 호출 로직
+    setIsLoading(true); // 로딩 시작
+    try {
+      await apiClient.post('/spaces', {
+        spaceName: spaceName,
+        ownerName: ownerName,
+      });
+      
+      alert('새로운 스페이스가 생성되었습니다.');
+      handleClose();
+      onSpaceCreated();   
+
+    } catch (error) {
+      console.error("스페이스 생성 실패:", error);
+      alert("스페이스 생성에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsLoading(false); // 로딩 종료
+    }
   };
 
+   // 모달이 닫힐 때 모든 상태를 초기화하는 함수
   const handleClose = () => {
+    if (isLoading) return; // 로딩 중에는 닫히지 않도록 방지
     setSpaceName('');
     setOwnerName('');
     setSpaceNameError('');
@@ -92,6 +106,7 @@ const CreateSpaceModal = ({ open, onClose }: CreateSpaceModalProps) => {
           onChange={(e) => setSpaceName(e.target.value)}
           error={!!spaceNameError}
           helperText={spaceNameError}
+          disabled={isLoading}
         />
         <TextField
           margin="dense"
@@ -104,11 +119,14 @@ const CreateSpaceModal = ({ open, onClose }: CreateSpaceModalProps) => {
           onChange={(e) => setOwnerName(e.target.value)}
           error={!!ownerNameError}
           helperText={ownerNameError}
+          disabled={isLoading}
         />
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
-        <Button onClick={handleClose}>취소</Button>
-        <Button onClick={handleCreate} variant="contained">만들기</Button>
+        <Button onClick={handleClose} disabled={isLoading}>취소</Button>
+        <Button onClick={handleCreate} variant="contained" disabled={isLoading}>
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : '만들기'}
+        </Button>
       </DialogActions>
     </Dialog>
   );

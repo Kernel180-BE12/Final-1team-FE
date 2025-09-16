@@ -1,5 +1,5 @@
 import { Box, Typography, Paper, TextField, Button, Avatar, Stack, Alert, Snackbar, } from '@mui/material';
-import useAuthStore from '../store/useAuthStore';
+import useAuthStore from '../store/useAppStore';
 import { useState } from 'react';
 
 /**

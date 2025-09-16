@@ -3,7 +3,7 @@ import { Box, Typography, TextField, IconButton, Paper, createTheme, ThemeProvid
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useNavigate } from 'react-router-dom';
-import useAuthStore from '../store/useAuthStore';
+import useAuthStore from '../store/useAppStore';
 import KakaoBasicTemplate from '../components/common/KakaoBasicTemplate';
 
 // 사용자가 입력한 내용을 보여주기 위한 예시 데이터

@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate,} from 'react-router-dom';
 
-import PublicLayout from './components/layout/PublicLayout';
-import DashboardLayout from './components/layout/DashboardLayout';
-import PrivateRoute from './components/layout/PrivateRoute';
+import PublicLayout from './components/layouts/PublicLayout';
+import DashboardLayout from './components/layouts/DashboardLayout';
+import PrivateRoute from './components/layouts/PrivateRoute';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
