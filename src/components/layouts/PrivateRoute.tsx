@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import useAuthStore from '../../store/useAuthStore';
+import useAuthStore from '../../store/useAppStore';
 
 /**
  * @description 로그인된 사용자만 접근 가능한 페이지를 보호하는 보안요원 컴포넌트입니다.

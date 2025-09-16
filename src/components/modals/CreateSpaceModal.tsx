@@ -12,7 +12,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import apiClient from '../../api';
 
-// TypeScript를 위해, 이 컴포넌트가 받을 props의 타입을 정의합니다.
+// 부모로부터 받을 props 타입에 onSpaceCreated를 추가
 interface CreateSpaceModalProps {
   open: boolean;
   onClose: () => void;
@@ -26,16 +26,7 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
   const [ownerNameError, setOwnerNameError] = useState('');
   const [isLoading, setIsLoading] = useState(false); // ★ 2. API 통신 로딩 상태를 관리할 state
 
-  // 모달이 닫힐 때 모든 상태를 초기화하는 함수
-  const handleClose = () => {
-    if (isLoading) return; // 로딩 중에는 닫히지 않도록 방지
-    setSpaceName('');
-    setOwnerName('');
-    setSpaceNameError('');
-    setOwnerNameError('');
-    onClose();
-  };
-
+  // async 키워드를 추가하여 비동기 함수로 만듦
   const handleCreate = async () => {
     let isValid = true;
     if (!spaceName.trim()) {
@@ -57,16 +48,14 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
     // ★ 3. 실제 API 호출 로직
     setIsLoading(true); // 로딩 시작
     try {
-      // POST /spaces API 호출
-      await apiClient.post('/spaces', { spaceName, ownerName });
+      await apiClient.post('/spaces', {
+        spaceName: spaceName,
+        ownerName: ownerName,
+      });
       
       alert('새로운 스페이스가 생성되었습니다.');
-      
-      // ★ 4. 생성이 성공하면, onSpaceCreated 함수를 호출하여 부모에게 알립니다.
-      onSpaceCreated();
-      
-      // ★ 5. 그 다음에 모달을 닫습니다. (handleClose를 호출하여 상태 초기화까지 한번에)
       handleClose();
+      onSpaceCreated();   
 
     } catch (error) {
       console.error("스페이스 생성 실패:", error);
@@ -74,6 +63,16 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
     } finally {
       setIsLoading(false); // 로딩 종료
     }
+  };
+
+   // 모달이 닫힐 때 모든 상태를 초기화하는 함수
+  const handleClose = () => {
+    if (isLoading) return; // 로딩 중에는 닫히지 않도록 방지
+    setSpaceName('');
+    setOwnerName('');
+    setSpaceNameError('');
+    setOwnerNameError('');
+    onClose();
   };
 
   return (
@@ -125,9 +124,8 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
       </DialogContent>
       <DialogActions sx={{ p: '16px 24px' }}>
         <Button onClick={handleClose} disabled={isLoading}>취소</Button>
-        {/* ★ 6. 로딩 상태에 따라 버튼 UI를 변경합니다. */}
         <Button onClick={handleCreate} variant="contained" disabled={isLoading}>
-          {isLoading ? <CircularProgress size={24} /> : '만들기'}
+          {isLoading ? <CircularProgress size={24} color="inherit" /> : '만들기'}
         </Button>
       </DialogActions>
     </Dialog>

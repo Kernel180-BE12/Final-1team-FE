@@ -1,72 +1,61 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Tab, Tabs, CircularProgress } from '@mui/material';
 import AllSpacesContent from './components/AllSpacesContent';
 import MembersContent from './components/MembersContent';
 import PermissionManagementContent from './components/PermissionManagementContent';
 import CreateSpaceModal from '../../components/modals/CreateSpaceModal';
-import apiClient from '../../api';
-
-// API 응답 데이터의 타입을 정의하고 외부에서 쓸 수 있도록 export
-export interface Space {
-  spaceId: number;
-  spaceName: string;
-  authority: 'ADMIN' | 'MEMBER';
-}
+import useAppStore from '../../store/useAppStore';
 
 const SpacesPage = () => {
+  const { spaces, fetchSpaces, isLoading: isStoreLoading } = useAppStore();
+
   const [currentTab, setCurrentTab] = useState('all-spaces');
   const [isModalOpen, setModalOpen] = useState(false);
-  
-  const [spaces, setSpaces] = useState<Space[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
   };
 
-  // 스페이스 목록을 API로 가져오는 함수
-  const fetchSpaces = useCallback(async () => {
-    setIsLoading(true); // API 호출 직전에 true로 설정
-    setError(null);
-    try {
-      const response = await apiClient.get<Space[]>('/spaces/list');
-      setSpaces(response.data || []);
-    } catch (err) {
-      setError('스페이스 목록을 불러오는 데 실패했습니다.');
-      console.error(err);
-    } finally {
-      setIsLoading(false); // API 호출이 성공하든 실패하든 끝나면 false로 설정
-    }
-  }, []); // 의존성 배열이 비어있으므로, 이 함수는 처음 한 번만 생성
+  // ★ 스페이스 생성 후, 스토어의 fetchSpaces를 호출하여 목록을 새로고침합니다.
+  const handleSpaceCreated = async () => {
+    setModalOpen(false);
+    setIsPageLoading(true); // 페이지 로딩 시작
+    await fetchSpaces(); 
+    setIsPageLoading(false); // 페이지 로딩 종료
+  };
 
-  // 컴포넌트가 처음 보일 때, 그리고 '전체 스페이스' 탭이 활성화될 때 데이터를 가져옵니다.
+  // ★ AllSpacesContent에서 데이터 변경이 일어났을 때 호출될 함수
+  const handleDataChange = async () => {
+    setIsPageLoading(true);
+    await fetchSpaces();
+    setIsPageLoading(false);
+  };
+
+  // 페이지가 처음 로드될 때 스페이스 목록을 가져옵니다.
+  // (DashboardLayout에서도 호출하지만, 여기서도 호출하여 데이터 일관성을 보장할 수 있습니다)
   useEffect(() => {
-    if (currentTab === 'all-spaces') {
-        fetchSpaces();
-    }
-  }, [currentTab, fetchSpaces]); // currentTab 또는 fetchSpaces 함수가 변경될 때 실행됩니다.
+    fetchSpaces();
+  }, [fetchSpaces]);
 
   const getHeaderTitle = () => {
     switch (currentTab) {
-      case 'all-spaces':
-        return '전체 스페이스';
-      case 'members':
-        return '구성원';
-      case 'permissions':
-        return '권한 관리';
-      default:
-        return '';
+      case 'all-spaces': return '전체 스페이스';
+      case 'members': return '구성원';
+      case 'permissions': return '권한 관리';
+      default: return '';
     }
   };
+
+  // ★ 최종 로딩 상태는 스토어의 로딩 상태 또는 페이지의 로딩 상태 중 하나라도 true일 때로 결정합니다.
+  const isLoading = isStoreLoading || isPageLoading;
 
   return (
     <>
       <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            {getHeaderTitle()}
-          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{getHeaderTitle()}</Typography>
         </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -80,17 +69,13 @@ const SpacesPage = () => {
         <Box sx={{ pt: 3, flexGrow: 1 }}>
           {currentTab === 'all-spaces' && (
             isLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : 
-            error ? (
-              <Typography color="error">{error}</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>
             ) : (
+              // ★ 7. 스토어에서 가져온 spaces와 새로고침 함수를 props로 전달합니다.
               <AllSpacesContent 
                 spaces={spaces} 
                 onAddSpace={() => setModalOpen(true)}
-                onDataChange={fetchSpaces}
+                onDataChange={handleDataChange}
               />
             )
           )}
@@ -101,8 +86,8 @@ const SpacesPage = () => {
 
       <CreateSpaceModal 
         open={isModalOpen} 
-        onClose={() => setModalOpen(false)}
-        onSpaceCreated={fetchSpaces} // 'onSpaceCreated' prop으로 fetchSpaces 함수를 전달
+        onClose={() => setModalOpen(false)} 
+        onSpaceCreated={handleSpaceCreated}
       />
     </>
   );
