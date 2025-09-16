@@ -1,22 +1,53 @@
-import { useState } from 'react';
-import { Box, Typography, Tab, Tabs,  } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Tab, Tabs, CircularProgress } from '@mui/material';
 import AllSpacesContent from './components/AllSpacesContent';
 import MembersContent from './components/MembersContent';
 import PermissionManagementContent from './components/PermissionManagementContent';
 import CreateSpaceModal from '../../components/modals/CreateSpaceModal';
+import apiClient from '../../api';
+
+// API 응답 데이터의 타입을 정의하고 외부에서 쓸 수 있도록 export
+export interface Space {
+  spaceId: number;
+  spaceName: string;
+  authority: 'ADMIN' | 'MEMBER';
+}
 
 const SpacesPage = () => {
-  // 1. SubSidebar 관련 상태(isSubSidebarOpen, selectedMenuKey)를 탭 상태로 변경합니다.
   const [currentTab, setCurrentTab] = useState('all-spaces');
   const [isModalOpen, setModalOpen] = useState(false);
+  
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // 2. 탭 변경을 처리하는 핸들러 함수를 추가합니다.
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
   };
 
+  // 스페이스 목록을 API로 가져오는 함수
+  const fetchSpaces = useCallback(async () => {
+    setIsLoading(true); // API 호출 직전에 true로 설정
+    setError(null);
+    try {
+      const response = await apiClient.get<Space[]>('/spaces/list');
+      setSpaces(response.data || []);
+    } catch (err) {
+      setError('스페이스 목록을 불러오는 데 실패했습니다.');
+      console.error(err);
+    } finally {
+      setIsLoading(false); // API 호출이 성공하든 실패하든 끝나면 false로 설정
+    }
+  }, []); // 의존성 배열이 비어있으므로, 이 함수는 처음 한 번만 생성
+
+  // 컴포넌트가 처음 보일 때, 그리고 '전체 스페이스' 탭이 활성화될 때 데이터를 가져옵니다.
+  useEffect(() => {
+    if (currentTab === 'all-spaces') {
+        fetchSpaces();
+    }
+  }, [currentTab, fetchSpaces]); // currentTab 또는 fetchSpaces 함수가 변경될 때 실행됩니다.
+
   const getHeaderTitle = () => {
-    // 2. 각 탭에 맞는 헤더 타이틀을 반환합니다.
     switch (currentTab) {
       case 'all-spaces':
         return '전체 스페이스';
@@ -38,7 +69,6 @@ const SpacesPage = () => {
           </Typography>
         </Box>
 
-        {/* 3. Tabs 컴포넌트를 새로운 구조에 맞게 수정합니다. */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={currentTab} onChange={handleTabChange} aria-label="스페이스 관리 탭">
             <Tab label="전체 스페이스" value="all-spaces" />
@@ -47,17 +77,33 @@ const SpacesPage = () => {
           </Tabs>
         </Box>
 
-        {/* 4. 탭 값에 따라 3가지 다른 콘텐츠를 보여줍니다. */}
         <Box sx={{ pt: 3, flexGrow: 1 }}>
           {currentTab === 'all-spaces' && (
-            <AllSpacesContent onAddSpace={() => setModalOpen(true)} />
+            isLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : 
+            error ? (
+              <Typography color="error">{error}</Typography>
+            ) : (
+              <AllSpacesContent 
+                spaces={spaces} 
+                onAddSpace={() => setModalOpen(true)}
+                onDataChange={fetchSpaces}
+              />
+            )
           )}
           {currentTab === 'members' && <MembersContent />}
           {currentTab === 'permissions' && <PermissionManagementContent />}
         </Box>
       </Box>
 
-      <CreateSpaceModal open={isModalOpen} onClose={() => setModalOpen(false)} />
+      <CreateSpaceModal 
+        open={isModalOpen} 
+        onClose={() => setModalOpen(false)}
+        onSpaceCreated={fetchSpaces} // 'onSpaceCreated' prop으로 fetchSpaces 함수를 전달
+      />
     </>
   );
 };
