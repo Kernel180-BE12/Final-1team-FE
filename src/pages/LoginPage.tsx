@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import useAuthStore from '../store/useAuthStore';
+import useAuthStore from '../store/useAppStore';
 import PasswordResetModal from '../components/modals/PasswordResetModal';
 import apiClient from '../api';
 
