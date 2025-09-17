@@ -31,7 +31,6 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
    * @description '비밀번호 재설정 요청' 버튼 클릭 시 호출
    */
   const handleSend = async () => {
-    // 유효성 검사
     if (!email) {
       setError('이메일을 입력해주세요.');
       return;
@@ -49,7 +48,7 @@ const PasswordResetModal = ({ open, onClose }: PasswordResetModalProps) => {
 
     try {
       // 서버에 비밀번호 재설정 요청 API 호출
-      const response = await apiClient.post('/user/reset-password', { email });
+      const response = await apiClient.post('/user/password', { email });
 
       if (response.status === 200) {
         setError('');
