@@ -34,7 +34,7 @@ const PasswordResetPage = () => {
   const token = searchParams.get('token');
 
   const [status, setStatus] = useState<'validating' | 'valid' | 'invalid'>('validating');
-  const [userEmail, setUserEmail] = useState('');
+  // const [userEmail, setUserEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -43,17 +43,24 @@ const PasswordResetPage = () => {
   const [apiError, setApiError] = useState('');
 
   useEffect(() => {
+    //  URL에서 토큰 가져옴. 토큰 없을 시 invalid
     if (!token) {
       setStatus('invalid');
       return;
     }
+
+    //  api 호출 전 validating 상태로 설정
+    setStatus('validating');
     
-    apiClient.get(`/user/validate-token?token=${token}`)
-      .then((response) => {
-        setUserEmail(response.data.email); // 백엔드가 이메일을 반환한다고 가정
+    apiClient.post('/user/token/check', { token: token })
+      .then(() => {
+        // ✅ API 호출이 성공하면(.then 블록에 들어오면),
+        // ✅ 내용물(response.data)을 확인할 필요 없이 즉시 'valid' 상태로 변경합니다.
         setStatus('valid');
+
       })
       .catch(() => {
+        // ✅ API 호출 자체가 실패하면(catch 블록에 들어오면), 'invalid' 상태로 변경합니다.
         setStatus('invalid');
       });
 
@@ -93,7 +100,7 @@ const PasswordResetPage = () => {
     if (isPasswordValid && isConfirmPasswordValid) {
       setApiError('');
       try {
-        await apiClient.post('/user/reset-password', { token, newPassword });
+        await apiClient.patch('/user/password', { token, newPassword });
         alert('비밀번호가 성공적으로 변경되었습니다!');
         navigate('/login');
       } catch (error) {
@@ -120,13 +127,13 @@ const PasswordResetPage = () => {
         case 'valid':
         return (
             <Stack spacing={2.5} sx={{ width: '100%' }}>
-            <TextField
+            {/* <TextField
                 label="이메일"
                 value={userEmail}
                 fullWidth
                 disabled
                 variant="filled"
-            />
+            /> */}
             <TextField
                 label="새 비밀번호"
                 type="password"
