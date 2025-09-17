@@ -50,7 +50,7 @@ const PublicLayout = () => {
                 background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); 
                 background-size: 400% 400%; 
                 animation: animated-gradient 15s ease infinite;
-                min-height: 100vh;
+                min-height: 90vh;
             }
         `} />
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

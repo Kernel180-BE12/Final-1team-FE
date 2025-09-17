@@ -658,7 +658,7 @@ export default function SuggestionPage() {
 
                 {/* 1. 왼쪽 채팅창 섹션 */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                         <Box sx={{
                             flex: 1,
                             p: 2,
