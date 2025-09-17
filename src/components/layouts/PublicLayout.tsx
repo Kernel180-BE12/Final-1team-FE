@@ -44,16 +44,18 @@ const PublicLayout = () => {
     <ThemeProvider theme={interactiveTheme}>
         <CssBaseline />
         <GlobalStyles styles={`
-            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700&display=swap' );
             @keyframes animated-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
             body { 
                 background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); 
                 background-size: 400% 400%; 
                 animation: animated-gradient 15s ease infinite;
-                min-height: 100vh;
+                /* ★ 1. body 자체의 스크롤을 방지합니다. */
+                overflow: hidden;
             }
         `} />
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        {/* ★ 2. 전체 레이아웃을 화면 높이에 꽉 채우고, 내부에서 스크롤이 발생하지 않도록 설정합니다. */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         <AppBar
             position="fixed"
             sx={{
@@ -85,17 +87,24 @@ const PublicLayout = () => {
                 로그인
             </Button>
             )}
-            {/* <Button variant="contained" onClick={() => navigate('/register')} sx={{ ml: 2 }}>
-                회원가입
-            </Button> */}
             </Toolbar>
         </AppBar>
+        {/* ★ 3. 메인 콘텐츠 영역이 남은 공간을 모두 차지하도록 하고, 내부에서 스크롤이 발생할 수 있도록 준비합니다. */}
         <Box component="main" sx={{ 
           flexGrow: 1, 
-          pt: '150px', 
-          pb: '80px',
-          px: { xs: 2, sm: 3, md: 4 },}}>
-            <Outlet />
+          pt: '88px', // AppBar 높이만큼 패딩 조정
+          pb: '24px',
+          px: { xs: 2, sm: 3, md: 4 },
+          // ★ 4. 이 Box가 flex 컨테이너 역할을 하여 자식 요소(SuggestionPage)가 높이를 100% 차지할 수 있게 합니다.
+          display: 'flex',
+          flexDirection: 'column',
+            //   overflow: 'hidden'
+            minHeight: 0,
+        }}>
+            {/* ★ 5. Outlet이 남은 공간을 모두 차지하도록 설정합니다. */}
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+                <Outlet />
+            </Box>
         </Box>
         </Box>
     </ThemeProvider>
