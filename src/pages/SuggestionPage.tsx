@@ -7,6 +7,17 @@ import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 
+// --- apiClient import 추가 ---
+// apiClient 파일의 실제 경로에 맞게 수정해주세요. (예: './apiClient', '../apiClient' 등)
+import apiClient from '../api';
+
+interface ApiErrorData {
+    detail?: string;
+    response?: string;
+    // 다른 에러 관련 속성이 있다면 여기에 추가할 수 있습니다.
+}
+
+
 // --- 타입 정의 ---
 interface StructuredTemplate {
     title: string;
@@ -132,17 +143,14 @@ const InteractiveCard = styled(Paper)({});
 
 // --- 유틸리티 및 헬퍼 컴포넌트 ---
 const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: string) => void }) => (
-    // ★★★ 이 Box의 sx에서 height: '100%'를 제거합니다. ★★★
     <Box sx={{
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        // height: '100%', // 이 줄을 제거하거나 주석 처리합니다.
         textAlign: 'center',
         p: 3,
         color: 'text.secondary',
-        // 추가: flex 컨테이너가 남은 공간을 모두 차지하도록 설정
         flex: 1
     }}>
         <Avatar sx={{ width: 72, height: 72, mb: 2, backgroundColor: 'rgba(255,255,255,0.7)' }}>
@@ -458,21 +466,106 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
+    // const callChatApi = async (message: string, currentState: object) => {
+    //     setIsLoading(true);
+    //     let isAutoCorrectionTriggered = false;
+    //
+    //     try {
+    //         // 1. apiClient.post를 사용하여 API 호출 (URL 경로는 baseURL에 따라 자동으로 조합됩니다)
+    //         // 2. 요청 본문은 JavaScript 객체 형태로 전달하면 axios가 자동으로 JSON으로 변환합니다.
+    //         const res = await apiClient.post('/template/create-template', {
+    //             message,
+    //             state: currentState
+    //         });
+    //
+    //         // 3. axios는 응답 데이터를 res.data에 담아 제공합니다.
+    //         const data = res.data;
+    //         if (!data.success) throw new Error(data.response || 'API에서 요청 처리에 실패했습니다.');
+    //
+    //         let templatesForMessage: StructuredTemplate[] = [];
+    //
+    //         if (data.structured_templates && data.structured_templates.length > 0) {
+    //             templatesForMessage = data.structured_templates;
+    //         }
+    //         else if (data.structured_template) {
+    //             if (data.hasImage) {
+    //                 const baseTemplate = data.structured_template;
+    //                 const placeholderUrl = 'https://via.placeholder.com/1024x512.png?text=Image+Preview';
+    //                 templatesForMessage = [
+    //                     { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
+    //                     { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
+    //                 ];
+    //             } else {
+    //                 templatesForMessage = [data.structured_template];
+    //             }
+    //         }
+    //
+    //         const hasTemplates = templatesForMessage.length > 0;
+    //         const newBotMessage: BotResponse = {
+    //             id: Date.now( ) + 1,
+    //             type: 'bot',
+    //             content: data.response,
+    //             timestamp: getCurrentTime(),
+    //             templates: templatesForMessage,
+    //             options: data.options,
+    //             selected_template_id: hasTemplates ? 0 : null,
+    //         };
+    //
+    //         setConversation(prev => [...prev, newBotMessage]);
+    //
+    //         const newState = data.state || {};
+    //         setSessionState(newState);
+    //
+    //         if (hasTemplates) {
+    //             setLivePreviewTemplate(templatesForMessage[0]);
+    //         } else {
+    //             const isConfirmation = newBotMessage.options && JSON.stringify(newBotMessage.options) === JSON.stringify(['예', '아니오']);
+    //             if(!isConfirmation) setLivePreviewTemplate(null);
+    //         }
+    //
+    //         const autoCorrectionTriggerMessage = "AI가 자동으로 수정하겠습니다";
+    //         if (data.response.includes(autoCorrectionTriggerMessage)) {
+    //             isAutoCorrectionTriggered = true;
+    //             setTimeout(() => {
+    //                 callChatApi("(자동 수정 진행)", newState);
+    //             }, 1500);
+    //         }
+    //
+    //     } catch (error) {
+    //         // 4. axios 에러 처리를 위한 로직
+    //         let errorMessage = '알 수 없는 오류가 발생했습니다.';
+    //         if (apiClient.isAxiosError(error)) {
+    //             // 서버에서 보낸 에러 메시지가 있다면 그것을 사용합니다.
+    //             const errorData = error.response?.data;
+    //             if (errorData && (errorData.detail || errorData.response)) {
+    //                 errorMessage = errorData.detail || errorData.response;
+    //             } else {
+    //                 errorMessage = error.message;
+    //             }
+    //         } else if (error instanceof Error) {
+    //             errorMessage = error.message;
+    //         }
+    //
+    //         setConversation(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: `오류: ${errorMessage}`, timestamp: getCurrentTime() } as BotResponse]);
+    //     } finally {
+    //         if (!isAutoCorrectionTriggered) {
+    //             setIsLoading(false);
+    //         }
+    //     }
+    // };
+    // --- callChatApi 함수 전체를 아래 코드로 교체해주세요 ---
+
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         let isAutoCorrectionTriggered = false;
 
         try {
-            const res = await fetch('/api/template/create-template', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, state: currentState })
+            const res = await apiClient.post('/template/create-template', {
+                message,
+                state: currentState
             });
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({ detail: res.statusText }));
-                throw new Error(errorData.detail || '서버에서 오류가 발생했습니다.');
-            }
-            const data = await res.json();
+
+            const data = res.data;
             if (!data.success) throw new Error(data.response || 'API에서 요청 처리에 실패했습니다.');
 
             let templatesForMessage: StructuredTemplate[] = [];
@@ -495,7 +588,7 @@ export default function SuggestionPage() {
 
             const hasTemplates = templatesForMessage.length > 0;
             const newBotMessage: BotResponse = {
-                id: Date.now( ) + 1,
+                id: Date.now() + 1,
                 type: 'bot',
                 content: data.response,
                 timestamp: getCurrentTime(),
@@ -525,14 +618,34 @@ export default function SuggestionPage() {
             }
 
         } catch (error) {
-            const errorMessage = `오류: ${error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'}`;
-            setConversation(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: errorMessage, timestamp: getCurrentTime() } as BotResponse]);
+            let errorMessage = '알 수 없는 오류가 발생했습니다.';
+
+            // ★★★ 이 부분이 수정되었습니다. ★★★
+            if (apiClient.isAxiosError(error) && error.response) {
+                // 1. error.response.data를 ApiErrorData 타입으로 단언합니다.
+                const errorData = error.response.data as ApiErrorData;
+
+                // 2. 이제 TypeScript가 errorData 객체에 detail과 response 속성이 있을 수 있음을 인지합니다.
+                if (errorData.detail) {
+                    errorMessage = errorData.detail;
+                } else if (errorData.response) {
+                    errorMessage = errorData.response;
+                } else {
+                    errorMessage = error.message;
+                }
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+
+            setConversation(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: `오류: ${errorMessage}`, timestamp: getCurrentTime() } as BotResponse]);
         } finally {
             if (!isAutoCorrectionTriggered) {
                 setIsLoading(false);
             }
         }
     };
+
+
 
     const handleSendMessage = async (message: string) => {
         if (!message.trim() || isLoading) return;
