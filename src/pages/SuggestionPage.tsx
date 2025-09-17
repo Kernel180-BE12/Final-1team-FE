@@ -1,22 +1,21 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, CircularProgress, Stack, ThemeProvider, createTheme } from '@mui/material';
+import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, Stack, ThemeProvider, createTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-
-// --- apiClient import 추가 ---
-// apiClient 파일의 실제 경로에 맞게 수정해주세요. (예: './apiClient', '../apiClient' 등)
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import apiClient from '../api';
+
+
 
 interface ApiErrorData {
     detail?: string;
     response?: string;
-    // 다른 에러 관련 속성이 있다면 여기에 추가할 수 있습니다.
 }
-
 
 // --- 타입 정의 ---
 interface StructuredTemplate {
@@ -37,6 +36,21 @@ interface BotResponse {
     options?: string[];
     isFinalized?: boolean;
 }
+
+const pulseAnimation = `
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.7; }
+  }
+`;
+
+const shimmerAnimation = `
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+`;
 
 // --- 상수 및 기본 데이터 ---
 const STYLE_SKELETONS: { [key: string]: StructuredTemplate } = {
@@ -267,9 +281,9 @@ const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
 };
 
 const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
-    <Paper sx={{ width: '100%', height: '760px', maxHeight: '100%', borderRadius: '44px', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#1c1c1e', border: '4px solid #d1d1d6', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
+    <Paper sx={{ width: '100%', height: '760px', borderRadius: '44px', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#1c1c1e', border: '4px solid #d1d1d6', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
         <Box sx={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '30px', bgcolor: '#1c1c1e', borderRadius: '0 0 16px 16px', zIndex: 2 }} />
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#b2c7d9', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#b2c7d9', overflow: 'hidden', minHeight: 0 }}>
             <Box sx={{ p: '4px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#000', zIndex: 1, height: '44px' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
@@ -283,7 +297,7 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
                     </svg>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, overflowY: 'auto', '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
+            <Box sx={{ flex: 1, inHeight: 0, '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
                 {children}
             </Box>
         </Box>
@@ -302,13 +316,38 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
 
     const isStyleSelection = msg.options.includes('기본형') && msg.options.includes('이미지형') && msg.options.includes('아이템리스트형');
 
+    // ★ 공통으로 사용할 버튼 스타일을 정의합니다.
+    const buttonSx = {
+        justifyContent: 'flex-start',
+        textAlign: 'left',
+        textTransform: 'none',
+        padding: '10px 16px',
+        lineHeight: 1.4,
+        fontWeight: 500,
+        // 선택되지 않았을 때의 스타일 (추천 템플릿 버튼과 동일하게)
+        '&.MuiButton-outlined': {
+            borderColor: 'primary.main',
+            color: 'primary.main',
+            borderWidth: '1.5px',
+            '&:hover': {
+                backgroundColor: 'rgba(59, 130, 246, 0.05)',
+            }
+        }
+    };
+
     if (isStyleSelection) {
         return (
             <Paper elevation={0} sx={{ p: 2, mt: 1, bgcolor: 'rgba(255,255,255,0.4)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)' }}>
                 <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>스타일 선택</Typography>
                 <Stack spacing={1}>
                     {msg.options.map((option, index) => (
-                        <Button key={index} variant={selectedStyle === option ? "contained" : "outlined"} onClick={() => onStyleSelect(option)} >
+                        <Button
+                            key={index}
+                            variant={selectedStyle === option ? "contained" : "outlined"}
+                            onClick={() => onStyleSelect(option)}
+                            // ★ 스타일을 적용합니다.
+                            sx={buttonSx}
+                        >
                             {option}
                         </Button>
                     ))}
@@ -330,7 +369,13 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold', color: '#475569' }}>{title}</Typography>
             <Stack spacing={1}>
                 {msg.options.map((option, index) => (
-                    <Button key={index} variant="outlined" onClick={() => onOptionSelect(option)} >
+                    <Button
+                        key={index}
+                        variant="outlined"
+                        onClick={() => onOptionSelect(option)}
+                        // ★ 스타일을 적용합니다.
+                        sx={buttonSx}
+                    >
                         {option}
                     </Button>
                 ))}
@@ -404,6 +449,18 @@ const TemplateSelector = ({ msg, onTemplateSelect, onConfirm, onSendMessage }: {
                 })}
             </Stack>
             <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                <Button
+                    variant="contained"
+                    onClick={() => onConfirm(msg.id, isFinalLayoutChoice)}
+                    disabled={msg.selected_template_id === null || msg.selected_template_id === undefined}
+                    sx={{ flexGrow: 1,
+                        backgroundColor: '#14b8a6',
+                        '&:hover': {
+                            backgroundColor: '#0d9488'
+                        }}}
+                >
+                    선택한 템플릿으로 진행
+                </Button>
                 {isInitialRecommendation && (
                     <Button
                         variant="contained"
@@ -419,18 +476,6 @@ const TemplateSelector = ({ msg, onTemplateSelect, onConfirm, onSendMessage }: {
                         새로 만들기
                     </Button>
                 )}
-                <Button
-                    variant="contained"
-                    onClick={() => onConfirm(msg.id, isFinalLayoutChoice)}
-                    disabled={msg.selected_template_id === null || msg.selected_template_id === undefined}
-                    sx={{ flexGrow: 1,
-                        backgroundColor: '#14b8a6',
-                        '&:hover': {
-                            backgroundColor: '#0d9488'
-                        }}}
-                >
-                    선택한 템플릿으로 진행
-                </Button>
             </Stack>
         </Paper>
     );
@@ -449,6 +494,8 @@ export default function SuggestionPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const effectRan = useRef(false);
+    const [showLoadingMessage, setShowLoadingMessage] = useState(false);
+
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -466,9 +513,14 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
+
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         let isAutoCorrectionTriggered = false;
+
+        const loadingTimer = setTimeout(() => {
+            setShowLoadingMessage(true);
+        }, 1000);
 
         try {
             const res = await apiClient.post('/template/create-template', {
@@ -517,7 +569,7 @@ export default function SuggestionPage() {
                 setLivePreviewTemplate(templatesForMessage[0]);
             } else {
                 const isConfirmation = newBotMessage.options && JSON.stringify(newBotMessage.options) === JSON.stringify(['예', '아니오']);
-                if(!isConfirmation) setLivePreviewTemplate(null);
+                if (!isConfirmation) setLivePreviewTemplate(null);
             }
 
             const autoCorrectionTriggerMessage = "AI가 자동으로 수정하겠습니다";
@@ -531,12 +583,8 @@ export default function SuggestionPage() {
         } catch (error) {
             let errorMessage = '알 수 없는 오류가 발생했습니다.';
 
-            // ★★★ 이 부분이 수정되었습니다. ★★★
             if (apiClient.isAxiosError(error) && error.response) {
-                // 1. error.response.data를 ApiErrorData 타입으로 단언합니다.
                 const errorData = error.response.data as ApiErrorData;
-
-                // 2. 이제 TypeScript가 errorData 객체에 detail과 response 속성이 있을 수 있음을 인지합니다.
                 if (errorData.detail) {
                     errorMessage = errorData.detail;
                 } else if (errorData.response) {
@@ -553,9 +601,10 @@ export default function SuggestionPage() {
             if (!isAutoCorrectionTriggered) {
                 setIsLoading(false);
             }
+            clearTimeout(loadingTimer);
+            setShowLoadingMessage(false);
         }
     };
-
 
 
     const handleSendMessage = async (message: string) => {
@@ -605,15 +654,26 @@ export default function SuggestionPage() {
 
     return (
         <ThemeProvider theme={customTheme}>
-            <Box sx={{ display: 'flex', gap: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', gap: 3, height: '100%', minHeight: 0 }}>
+
+                {/* 1. 왼쪽 채팅창 섹션 */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <Box sx={{ flex: 1, overflowY: 'auto', p: 2, minHeight: 0, '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
+                        <Box sx={{
+                            flex: 1,
+                            p: 2,
+                            minHeight: 0,
+                            overflowY: 'auto', // 내용이 넘칠 때 세로 스크롤 생성
+                            display: 'flex', // 자식 요소(EmptyChatPlaceholder)를 flex item으로 다루기 위함
+                            flexDirection: 'column', // 메시지를 세로로 쌓기 위함
+                            '&::-webkit-scrollbar': { display: 'none' }, // 기존 스크롤바 숨김 스타일 유지
+                            scrollbarWidth: 'none'
+                        }}>
                             {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => (
                                 <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
                                     {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
                                     <Box sx={{ maxWidth: '80%', display: 'flex', flexDirection: 'column', alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
-                                        <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : 'rgba(255,255,255,0.8)', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)', backdropFilter: 'none', border: 'none' }}>
+                                        <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : 'background.botMessage', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)', backdropFilter: 'none', border: 'none' }}>
                                             <Typography variant="body1">{msg.content}</Typography>
                                         </Paper>
 
@@ -639,7 +699,55 @@ export default function SuggestionPage() {
                                     </Box>
                                 </Box>
                             ))}
-                            {isLoading && (<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={32} /></Box>)}
+                            {showLoadingMessage && (
+                                <Box sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center', // ★ 중앙 정렬을 위해 추가
+                                    p: 2,
+                                    mb: 2,
+                                }}>
+                                    <style>{pulseAnimation}{shimmerAnimation}</style>
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: '10px 16px',
+                                            // ★ 1. 네 모서리가 모두 동일한 둥근 형태
+                                            borderRadius: '16px',
+                                            // ★ 2. 하얀색이 아닌, 은은한 회색 계열 배경
+                                            bgcolor: '#e2e8f0',
+                                            color: 'text.secondary',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1.5, // 아이콘과 텍스트 사이 간격 조정
+                                            boxShadow: 'none', // 그림자 제거로 더 깔끔하게
+                                            backdropFilter: 'none',
+                                            border: 'none'
+                                        }}
+                                    >
+                                        {/* ★ 3. 아바타 대신 아이콘을 직접 사용합니다. */}
+                                        <AutoAwesomeIcon sx={{
+                                            fontSize: 20,
+                                            animation: 'pulse 2s infinite ease-in-out'
+                                        }} />
+
+                                        {/* ★ 4. "반짝이는" 애니메이션을 텍스트에 적용합니다. */}
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                fontWeight: 500,
+                                                background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
+                                                backgroundSize: '200% 100%',
+                                                color: 'transparent',
+                                                backgroundClip: 'text',
+                                                animation: 'shimmer 3s infinite linear',
+                                            }}
+                                        >
+                                            AI가 생각 중입니다...
+                                        </Typography>
+                                    </Paper>
+                                </Box>
+                            )}
+                            {/* ▲▲▲ 여기가 수정된 부분입니다 ▲▲▲ */}
                             <div ref={chatEndRef} />
                         </Box>
                         <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>
@@ -657,19 +765,20 @@ export default function SuggestionPage() {
                                     InputProps={{ disableUnderline: true }}
                                 />
                                 <IconButton color="primary" type="submit" sx={{ p: '10px' }} disabled={!inputValue.trim() || isLoading}>
-                                    {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
+                                    <SendIcon />
                                 </IconButton>
                             </Paper>
                         </Box>
                     </InteractiveCard>
                 </Box>
+
+                {/* 2. 오른쪽 아이폰 미리보기 섹션 */}
                 <Box sx={{
                     width: '360px',
                     minWidth: '360px',
                     display: { xs: 'none', md: 'flex' },
                     flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center'
+                    minHeight: 0,
                 }}>
                     <IPhoneMockup>
                         {livePreviewTemplate ? <IPhoneKakaoPreview template={livePreviewTemplate} /> : (
