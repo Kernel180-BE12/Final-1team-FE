@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import apiClient from '../api';
 import { getColorForId } from '../utils/colorUtils';
 
+
 export interface Space {
   spaceId: number;
   spaceName: string;
@@ -39,6 +40,7 @@ const useAppStore = create<AppState>()(
       currentSpace: null,
       isLoading: false,
 
+
       // --- 액션(함수)들 ---
       login: (userInfo: User) => set({ isLoggedIn: true, user: userInfo }),
 
@@ -48,7 +50,7 @@ const useAppStore = create<AppState>()(
         } catch (error) {
           console.error('로그아웃 API 호출 실패:', error);
         } finally {
-          set({ isLoggedIn: false, user: null, spaces: [], sortedSpaces: [], currentSpace: null, isLoading: false });
+          set({ isLoggedIn: false, user: null, spaces: [], sortedSpaces: [], currentSpace: null, isLoading: false, });
         }
       },
 
