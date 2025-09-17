@@ -41,6 +41,12 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
 
+  // 중복 체크를 위한 상태 추가 -> 어떤 필드가 중복 검사 중인지 추적
+  const [isChecking, setIsChecking] = useState({
+    username: false,
+    email: false,
+  })
+
 
   const validateField = useCallback((name: string, value: string) => {
     switch (name) {
@@ -75,10 +81,39 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
     }
   };
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const errorMessage = validateField(name, value);
-    setErrors(prevErrors => ({ ...prevErrors, [name]: errorMessage }));
+
+    // 1. 먼저 형식 유효성부터 검사합니다.
+    const formatError = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: formatError }));
+
+    // 2. 형식부터 틀렸거나, 필드가 비어있거나, 아이디/이메일 필드가 아니면 중복 검사를 하지 않습니다.
+    if (formatError || !value || (name !== 'username' && name !== 'email')) {
+      return;
+    }
+
+    // 3. 중복 검사 API를 호출합니다.
+    setIsChecking(prev => ({ ...prev, [name]: true })); // 검사 시작 상태로 변경
+    try {
+      const endpoint = name === 'username' ? '/user/id/check' : '/user/email/check';
+      await apiClient.post(endpoint, { [name]: value });
+
+      // 성공(200 OK)은 중복되지 않음을 의미합니다.
+      // 기존에 있던 에러 메시지를 지워줍니다. (예: 이전에 중복됐다가 사용 가능한 아이디로 바꾼 경우)
+      setErrors(prev => ({ ...prev, [name]: '' }));
+
+    } catch (error) {
+      // 실패(400 Bad Request)는 중복됨을 의미합니다.
+      if (apiClient.isAxiosError(error) && error.response?.status === 400) {
+        const duplicateMessage = name === 'username'
+          ? '이미 사용 중인 아이디입니다.'
+          : '이미 등록된 이메일입니다.';
+        setErrors(prev => ({ ...prev, [name]: duplicateMessage }));
+      }
+    } finally {
+      setIsChecking(prev => ({ ...prev, [name]: false })); // 검사 완료 상태로 변경
+    }
   };
 
   const handleSubmit = async () => {
@@ -114,18 +149,30 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
         navigate('/login');
       }
     } catch (error) {
-        if (apiClient.isAxiosError(error) && error.response) {
-            const data = error.response.data;
-            if (typeof data === 'object' && data !== null && 'message' in data && typeof (data as { message: unknown }).message === 'string') {
-                setApiError((data as { message: string }).message);
-            } else {
-                setApiError('요청 데이터가 잘못되었거나 이미 존재하는 사용자입니다.');
-            }
-            console.error('회원가입 실패:', error.response.data);
+      if (apiClient.isAxiosError(error) && error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+
+        // 2. data가 message 속성을 가진 객체인지 확인합니다.
+        if (typeof data === 'object' && data !== null && 'message' in data && typeof (data as { message: string }).message === 'string') {
+            // 백엔드가 구체적인 메시지를 주면, 그대로 사용합니다.
+            setApiError((data as { message: string }).message);
+        } 
+        // 3. ✨ 백엔드가 메시지를 안 줬을 경우, status 코드로 분기합니다.
+        else if (status >= 500) {
+            setApiError('서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        } else if (status >= 400) {
+            setApiError('입력 내용을 다시 확인해주세요.');
         } else {
-            setApiError('네트워크 오류 또는 알 수 없는 문제가 발생했습니다.');
-            console.error('회원가입 실패:', error);
+            setApiError('알 수 없는 오류가 발생했습니다.');
         }
+        console.error(`회원가입 실패 (상태 코드: ${status}):`, data);
+
+    } else {
+        // 4. 네트워크 에러 등 Axios 에러가 아닌 경우 (기존과 동일)
+        setApiError('네트워크에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.');
+        console.error('회원가입 실패 (네트워크 오류):', error);
+    }
     } finally {
       setIsLoading(false); // 로딩 종료
     }
@@ -150,11 +197,11 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
           회원가입
         </Typography>
         <Stack spacing={2}>
-          <TextField name="username" label="아이디" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.username} helperText={errors.username} disabled={isLoading} />
+          <TextField name="username" label="아이디" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.username} helperText={errors.username} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.username ? <CircularProgress size={20} /> : null, }}}/>
           <TextField name="password" label="비밀번호" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.password} helperText={errors.password} disabled={isLoading} />
           <TextField name="passwordConfirm" label="비밀번호 확인" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.passwordConfirm} helperText={errors.passwordConfirm} disabled={isLoading} />
           <TextField name="name" label="이름" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.name} helperText={errors.name} disabled={isLoading} />
-          <TextField name="email" label="이메일" type="email" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.email} helperText={errors.email} disabled={isLoading} />
+          <TextField name="email" label="이메일" type="email" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.email} helperText={errors.email} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.email ? <CircularProgress size={20} /> : null, }}}/>
           
           {apiError && (
             <Typography color="error" variant="body2" sx={{ textAlign: 'center' }}>
