@@ -533,7 +533,7 @@ export default function SuggestionPage() {
         }, 1000);
 
         try {
-            const res = await apiClient.post('http://localhost:8000/api/chat', {
+            const res = await apiClient.post('/template/create-template', {
                 message,
                 state: currentState
             });
