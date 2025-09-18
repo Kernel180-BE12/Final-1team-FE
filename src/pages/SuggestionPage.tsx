@@ -316,14 +316,13 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
                     </svg>
                 </Box>
             </Box>
-            {/* ★★★★★ 수정된 부분 ★★★★★ */}
-            <Box sx={{ 
-                flex: 1, 
-                minHeight: 0, 
-                overflowY: 'auto', // 세로 스크롤 활성화
-                '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, 
-                '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, 
-                '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } 
+            <Box sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' },
+                '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' },
+                '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } }
             }}>
                 {children}
             </Box>
@@ -524,6 +523,7 @@ export default function SuggestionPage() {
     const [showLoadingMessage, setShowLoadingMessage] = useState(false);
     const { currentSpace } = useAppStore();
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+    const [isConversationComplete, setIsConversationComplete] = useState(false);
 
 
     useEffect(() => {
@@ -559,6 +559,12 @@ export default function SuggestionPage() {
 
             const data = res.data;
             if (!data.success) throw new Error(data.response || 'API에서 요청 처리에 실패했습니다.');
+
+            // 완료 메시지 확인
+            const completionMessage = "템플릿 생성을 마칩니다. 이용해주셔서 감사합니다!";
+            if ((data.message || data.response)?.includes(completionMessage)) {
+                setIsConversationComplete(true);
+            }
 
             let templatesForMessage: StructuredTemplate[] = [];
 
@@ -650,6 +656,7 @@ export default function SuggestionPage() {
         const userMessage = message;
         setInputValue('');
         setSelectedStyleOption(null);
+        setIsConversationComplete(false); // 새 대화 시작 시 초기화
 
         setConversation(prev => {
             const clearedConversation = prev.map(msg => ({
@@ -873,7 +880,7 @@ export default function SuggestionPage() {
                         size="large"
                         startIcon={<SaveIcon />}
                         onClick={handleSaveTemplate}
-                        disabled={!livePreviewTemplate || isSaving}
+                        disabled={!isConversationComplete || isSaving}
                         sx={{ mt: 2, width: '100%', py: 1.5, fontSize: '1rem' }}
                     >
                         {isSaving ? '저장하는 중...' : '이 템플릿 저장하기'}
