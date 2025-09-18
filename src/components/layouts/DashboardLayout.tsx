@@ -153,9 +153,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
-  Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Toolbar, AppBar, Typography, Avatar, Menu, MenuItem, IconButton,
-  ThemeProvider, createTheme, Divider
+    Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
+    Toolbar, AppBar, Typography, Avatar, Menu, MenuItem, IconButton,
+    ThemeProvider, createTheme, Divider, CssBaseline // ★ 1. CssBaseline을 import에 추가합니다.
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -199,13 +199,10 @@ const DashboardLayout = () => {
     fetchSpaces 
   } = useAppStore();
 
-  const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchSpaces();
-    }
-  }, [isLoggedIn, fetchSpaces]);
+    const { logout, user, currentSpace, isLoggedIn, fetchSpaces } = useAppStore();
+
+    const [profileMenuAnchor, setProfileMenuAnchor] = useState<null | HTMLElement>(null);
 
   // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
   // ★★★ 핵심 기능: URL과 currentSpace 상태 동기화 ★★★
@@ -359,6 +356,7 @@ const DashboardLayout = () => {
       </Box>
     </ThemeProvider>
   );
+
 };
 
 export default DashboardLayout;
