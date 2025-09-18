@@ -11,12 +11,16 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import apiClient from '../../api';
+// ★★★ 변경점 1: Space 타입을 import 합니다. ★★★
+// 이 타입은 API 응답의 형태와 일치해야 합니다.
+import type { Space } from '../../store/useAppStore'; 
 
-// 부모로부터 받을 props 타입에 onSpaceCreated를 추가
+// ★★★ 변경점 2: 부모로부터 받을 props 타입 수정 ★★★
 interface CreateSpaceModalProps {
   open: boolean;
   onClose: () => void;
-  onSpaceCreated: () => void;  // 스페이스 생성이 성공했을 때 호출될 함수
+  // onSpaceCreated가 생성된 Space 객체를 인자로 받도록 변경합니다.
+  onSpaceCreated: (newSpace: Space) => void;
 }
 
 const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSpaceCreated }) => {
@@ -24,9 +28,8 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
   const [ownerName, setOwnerName] = useState('');
   const [spaceNameError, setSpaceNameError] = useState('');
   const [ownerNameError, setOwnerNameError] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // ★ 2. API 통신 로딩 상태를 관리할 state
+  const [isLoading, setIsLoading] = useState(false);
 
-  // async 키워드를 추가하여 비동기 함수로 만듦
   const handleCreate = async () => {
     let isValid = true;
     if (!spaceName.trim()) {
@@ -45,29 +48,33 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
 
     if (!isValid) return;
 
-    // ★ 3. 실제 API 호출 로직
-    setIsLoading(true); // 로딩 시작
+    setIsLoading(true);
     try {
-      await apiClient.post('/spaces', {
+      // ★★★ 변경점 3: API 응답으로 생성된 스페이스 정보를 받습니다. ★★★
+      const response = await apiClient.post<Space>('/spaces', {
         spaceName: spaceName,
         ownerName: ownerName,
       });
       
+      const newSpace = response.data;
+
       alert('새로운 스페이스가 생성되었습니다.');
-      handleClose();
-      onSpaceCreated();   
+      
+      // ★★★ 변경점 4: 부모(AgentPage)에게 생성된 스페이스 객체를 전달합니다. ★★★
+      onSpaceCreated(newSpace);   
+      
+      handleClose(); // 스스로 닫습니다.
 
     } catch (error) {
       console.error("스페이스 생성 실패:", error);
       alert("스페이스 생성에 실패했습니다. 다시 시도해주세요.");
     } finally {
-      setIsLoading(false); // 로딩 종료
+      setIsLoading(false);
     }
   };
 
-   // 모달이 닫힐 때 모든 상태를 초기화하는 함수
   const handleClose = () => {
-    if (isLoading) return; // 로딩 중에는 닫히지 않도록 방지
+    if (isLoading) return;
     setSpaceName('');
     setOwnerName('');
     setSpaceNameError('');
@@ -82,12 +89,7 @@ const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ open, onClose, onSp
         <IconButton
           aria-label="close"
           onClick={handleClose}
-          sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-          }}
+          sx={{ position: 'absolute', right: 8, top: 8, color: (theme) => theme.palette.grey[500] }}
         >
           <CloseIcon />
         </IconButton>
