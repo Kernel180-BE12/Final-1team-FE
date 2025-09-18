@@ -1,11 +1,8 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
     Button,
-    List,
-    ListItemButton,
-    ListItemText,
     Paper,
     Divider,
     Table,
@@ -15,133 +12,290 @@ import {
     TableHead,
     TableRow,
     Checkbox,
-    ListItemIcon,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    TextField,
+    Alert,
     IconButton,
+    Menu,
+    MenuItem,
+    ListItemIcon,
+    ListItemText
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import GroupIcon from '@mui/icons-material/Group';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteIcon from '@mui/icons-material/Delete';
+import useAppStore from '../store/useAppStore';
 
-import { SUB_SIDEBAR_WIDTH } from '../styles/layoutConstants';
+// 새로 추가할 연락처의 타입을 정의합니다.
+interface NewContact {
+    name: string;
+    phoneNumber: string;
+    email: string;
+    tag: string; // tag는 항상 string 타입으로 관리 (빈 문자열 포함)
+}
 
-
-/**
- * @description 사용자가 속한 스페이스 목록을 보여주는 페이지 컴포넌트입니다.
- * @returns {React.ReactElement} ContactsPage 컴포넌트
- */
 const ContactsPage = () => {
-    const [isSubSidebarOpen, setSubSidebarOpen] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    // ★ 1. newContact의 tag 초기값을 빈 문자열로 설정합니다.
+    const [newContact, setNewContact] = useState<NewContact>({ name: '', phoneNumber: '', email: '', tag: '' });
+    const [apiError, setApiError] = useState<string | null>(null);
+    
+    // ★ 2. 유효성 검사 에러 메시지를 관리할 state 추가
+    const [validationErrors, setValidationErrors] = useState<Partial<NewContact>>({});
 
-    const contacts = [
-    { id: 1, name: '우리 회사 마케팅팀', documents: ['바로가기 >'], tag: '', nikName: '홍길동대리', affiliation: '', phone: '010-1234-5678', email: 'asdf123@example.com' },
-    { id: 2, name: '사이드 프로젝트: 댕댕이 산책 앱', documents: ['바로가기 >'], tag: '', nikName: '', affiliation: '', phone: '010-2345-6789', email: 'qwerty12@example.com' },
-    { id: 3, name: '개인 워크스페이스', documents: ['바로가기 >'] , tag: '', nikName: '', affiliation: '', phone: '010-3456-7890', email: 'zxcv1@example.com'  },
-    ];
+    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [currentContactId, setCurrentContactId] = useState<null | number>(null);
+    const isMenuOpen = Boolean(menuAnchorEl);
+
+    const { 
+      contacts, 
+      isLoadingContacts, 
+      fetchContacts, 
+      currentSpace,
+      addContacts,
+      deleteContact
+    } = useAppStore();
+
+    useEffect(() => {
+        if (currentSpace) {
+            fetchContacts();
+        }
+    }, [currentSpace, fetchContacts]);
+
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setNewContact({ name: '', phoneNumber: '', email: '', tag: '' });
+        setValidationErrors({});
+        setApiError(null);
+    };
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = event.target;
+        setNewContact(prev => ({ ...prev, [name]: value }));
+    };
+
+    // ★ 3. 유효성 검사 로직 함수 분리
+    const validateContact = (): boolean => {
+        const errors: Partial<NewContact> = {};
+
+        // 이름 유효성 검사 (최소 2자)
+        if (newContact.name.trim().length < 2) {
+            errors.name = '이름은 2자 이상 입력해주세요.';
+        }
+
+        // 휴대전화 유효성 검사 (010-1234-5678 형식)
+        const phoneRegex = /^010-\d{4}-\d{4}$/;
+        if (!phoneRegex.test(newContact.phoneNumber)) {
+            errors.phoneNumber = '휴대전화 형식이 올바르지 않습니다. (예: 010-1234-5678)';
+        }
+
+        // 이메일 유효성 검사 (입력된 경우에만)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (newContact.email && !emailRegex.test(newContact.email)) {
+            errors.email = '유효한 이메일 주소를 입력해주세요.';
+        }
+
+        setValidationErrors(errors);
+        return Object.keys(errors).length === 0; // 에러가 없으면 true 반환
+    };
+
+    // ★ 4. '저장' 버튼 핸들러에 유효성 검사 로직 추가
+    const handleAddContact = async () => {
+        setApiError(null);
+        if (!validateContact()) {
+            return; // 유효성 검사 실패 시 중단
+        }
+
+        try {
+            // API payload를 생성합니다. 태그는 값이 있을 때만 포함시킵니다.
+            const contactPayload = {
+                name: newContact.name,
+                phoneNumber: newContact.phoneNumber,
+                email: newContact.email,
+                ...(newContact.tag && { tag: newContact.tag })
+            };
+
+            await addContacts({ contacts: [contactPayload] });
+            handleCloseModal();
+        } catch (apiError) {
+            console.error("연락처 추가 실패:", apiError);
+            setApiError("연락처 추가에 실패했습니다. 다시 시도해주세요.");
+        }
+    };
+    
+    const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, contactId: number) => {
+        setMenuAnchorEl(event.currentTarget);
+        setCurrentContactId(contactId);
+    };
+
+    const handleMenuClose = () => {
+        setMenuAnchorEl(null);
+        setCurrentContactId(null);
+    };
+    
+    const handleDeleteContact = async () => {
+        if (currentContactId !== null) {
+            if (window.confirm('정말로 이 연락처를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                try {
+                    await deleteContact(currentContactId);
+                } catch (apiError) {
+                    console.error("연락처 삭제 실패:", apiError);
+                }
+            }
+        }
+        handleMenuClose();
+    };
+
+
+    if (isLoadingContacts) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
-    <Box sx={{ display: 'flex', position: 'relative' }}>
-      {/* 왼쪽 하위 메뉴 패널의 너비와 마진을 동적으로 조절합니다. */}
-        <Paper
-        variant="outlined"
-        sx={{
-            width: isSubSidebarOpen ? SUB_SIDEBAR_WIDTH : 0,
-            minWidth: isSubSidebarOpen ? SUB_SIDEBAR_WIDTH : 0,
-            borderColor: '#e0e0e0',
-            alignSelf: 'flex-start',
-            transition: (theme) => theme.transitions.create(['width', 'min-width'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-            }),
-            // 너비가 0일 때 내부 내용이 삐져나오지 않도록 숨김
-            overflow: 'hidden',
-        }}
-        >
-        <Box sx={{ width: SUB_SIDEBAR_WIDTH }}>
-            <Box sx={{ p: 2, borderBottom: '1px solid #e0e0e0' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                연락처
-            </Typography>
+       <>
+            <Box sx={{ display: 'flex', position: 'relative' }}>
+                <Box sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                        연락처
+                        </Typography>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenModal}>
+                        새로운 연락처 등록
+                        </Button>
+                    </Box>
+
+                    <TableContainer component={Paper} variant="outlined">
+                        <Table sx={{ minWidth: 650 }} aria-label="contact table">
+                            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+                                <TableRow>
+                                <TableCell padding="checkbox">
+                                    <Checkbox />
+                                </TableCell>
+                                <TableCell>이름</TableCell>
+                                <TableCell>태그</TableCell>
+                                <TableCell>휴대전화</TableCell>
+                                <TableCell>이메일</TableCell>
+                                <TableCell align="right">작업</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {contacts.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
+                                    등록된 연락처가 없습니다.
+                                    </TableCell>
+                                </TableRow>
+                                ) : (
+                                contacts.map((contact) => (
+                                <TableRow key={contact.id}>
+                                    <TableCell padding="checkbox">
+                                        <Checkbox />
+                                    </TableCell>
+                                    <TableCell>{contact.name}</TableCell>
+                                    <TableCell>{contact.tag || '-'}</TableCell>
+                                    <TableCell>{contact.phoneNumber}</TableCell>
+                                    <TableCell>{contact.email}</TableCell>
+                                    <TableCell align="right">
+                                        <IconButton size="small" onClick={(e) => handleMenuOpen(e, contact.id)}>
+                                            <MoreVertIcon fontSize="small" />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                                ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Box>
             </Box>
-        <List>
-            <ListItemButton selected>
-            <ListItemIcon sx={{ minWidth: 32 }}>
-                <GroupIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary="전체" />
-            <Typography variant="body2" color="text.secondary">
-                2
-            </Typography>
-            </ListItemButton>
-            <ListItemButton>
-            <ListItemText primary="> 모두 보기" sx={{ pl: 4 }} />
-            </ListItemButton>
-        </List>
-        </Box>
-        </Paper>
 
-      {/* [수정] 오른쪽 메인 콘텐츠 패널의 marginLeft 로직을 단순화합니다. */}
-        <Box 
-        sx={{ 
-            flexGrow: 1,
-            marginLeft: isSubSidebarOpen ? 3 : 0,
-            transition: (theme) => theme.transitions.create('margin-left', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-            }),
-        }}
-        >
-        {/* 헤더 영역에 토글 버튼을 추가합니다. */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <IconButton onClick={() => setSubSidebarOpen(!isSubSidebarOpen)} sx={{ mr: 1 }}>
-            {isSubSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-            </IconButton>
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            연락처
-            </Typography>
-            <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
-            <Button variant="contained" startIcon={<AddIcon />}>
-            새로운 연락처 등록
-            </Button>
-        </Box>
+            {/* ★ 5. 모달 UI 수정: 태그 필드 추가 및 유효성 검사 피드백 UI 연결 */}
+            <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ fontWeight: 'bold' }}>새로운 연락처 등록</DialogTitle>
+                <DialogContent>
+                    {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        name="name"
+                        label="이름 (필수)"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={newContact.name}
+                        onChange={handleInputChange}
+                        error={!!validationErrors.name}
+                        helperText={validationErrors.name || ' '}
+                    />
+                    <TextField
+                        margin="dense"
+                        name="phoneNumber"
+                        label="휴대전화 (필수)"
+                        type="tel"
+                        fullWidth
+                        variant="outlined"
+                        value={newContact.phoneNumber}
+                        onChange={handleInputChange}
+                        error={!!validationErrors.phoneNumber}
+                        helperText={validationErrors.phoneNumber || '-(하이픈)을 넣어서 입력해주세요.'}
+                    />
+                    <TextField
+                        margin="dense"
+                        name="email"
+                        label="이메일 (필수)"
+                        type="email"
+                        fullWidth
+                        variant="outlined"
+                        value={newContact.email}
+                        onChange={handleInputChange}
+                        error={!!validationErrors.email}
+                        helperText={validationErrors.email || ' '}
+                    />
+                    <TextField
+                        margin="dense"
+                        name="tag"
+                        label="태그 (선택)"
+                        type="text"
+                        fullWidth
+                        variant="outlined"
+                        value={newContact.tag}
+                        onChange={handleInputChange}
+                        helperText=" "
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: '16px 24px' }}>
+                    <Button onClick={handleCloseModal} color="secondary">취소</Button>
+                    <Button onClick={handleAddContact} variant="contained">저장</Button>
+                </DialogActions>
+            </Dialog>
 
-        <TableContainer component={Paper} variant="outlined">
-            <Table sx={{ minWidth: 650 }} aria-label="contact table">
-            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableRow>
-                <TableCell padding="checkbox">
-                    <Checkbox />
-                </TableCell>
-                <TableCell>이름</TableCell>
-                <TableCell>개별 문서함</TableCell>
-                <TableCell>태그</TableCell>
-                <TableCell>닉네임</TableCell>
-                <TableCell>소속</TableCell>
-                <TableCell>휴대전화</TableCell>
-                <TableCell>이메일</TableCell>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {contacts.map((contact) => (
-                <TableRow key={contact.id}>
-                    <TableCell padding="checkbox">
-                        <Checkbox />
-                    </TableCell>
-                    <TableCell>{contact.name}</TableCell>
-                    <TableCell>{contact.documents}</TableCell>
-                    <TableCell>{contact.tag}</TableCell>
-                    <TableCell>{contact.nikName}</TableCell>
-                    <TableCell>{contact.affiliation}</TableCell>
-                    <TableCell>{contact.phone}</TableCell>
-                    <TableCell>{contact.email}</TableCell>
-                </TableRow>
-                ))}
-            </TableBody>
-            </Table>
-        </TableContainer>
-        </Box>
-    </Box>
+            <Menu
+                anchorEl={menuAnchorEl}
+                open={isMenuOpen}
+                onClose={handleMenuClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <MenuItem onClick={handleDeleteContact} sx={{ color: 'error.main' }}>
+                    <ListItemIcon>
+                        <DeleteIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText>삭제</ListItemText>
+                </MenuItem>
+            </Menu>
+       </>
     );
 };
 
 export default ContactsPage;
+

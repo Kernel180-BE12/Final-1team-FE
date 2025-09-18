@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, Stack, ThemeProvider, createTheme } from '@mui/material';
+import { Box, Paper, Typography, Button, TextField, Avatar, IconButton, Stack, ThemeProvider, createTheme, Snackbar, Alert } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import apiClient from '../api';
+import SaveIcon from '@mui/icons-material/Save';
 
+import apiClient from '../api';
+import useAppStore from '../store/useAppStore';
+
+
+// --- 타입 정의 ---
 interface ApiErrorData {
     detail?: string;
     response?: string;
 }
 
-// --- 타입 정의 ---
 interface StructuredTemplate {
     title: string;
     body: string;
@@ -23,9 +27,16 @@ interface StructuredTemplate {
     image_layout?: 'header' | 'background' | null;
 }
 
+// 수정된 타입 정의
+interface TemplateVariable {
+    name: string;
+    type: 'string' | 'number';
+    example?: string | number;
+}
+
 interface EditableVariables {
     parameterized_template: string;
-    variables: any[];
+    variables: TemplateVariable[];
 }
 
 interface BotResponse {
@@ -37,12 +48,13 @@ interface BotResponse {
     selected_template_id?: number | null;
     options?: string[];
     isFinalized?: boolean;
-    template?: string; // 추가: 템플릿 문자열
-    structured_template?: StructuredTemplate; // 추가: 구조화된 템플릿
-    buttons?: [string, string][]; // 추가: 버튼 리스트
-    hasImage?: boolean; // 추가: 이미지 유무
-    editable_variables?: EditableVariables; // 추가: 편집 가능한 변수들
+    template?: string;
+    structured_template?: StructuredTemplate;
+    buttons?: [string, string][];
+    hasImage?: boolean;
+    editable_variables?: EditableVariables;
 }
+
 
 const pulseAnimation = `
   @keyframes pulse {
@@ -69,7 +81,7 @@ const STYLE_SKELETONS: { [key: string]: StructuredTemplate } = {
     '이미지형': {
         title: '[시선을 끄는 이미지 위 제목]',
         body: '이미지와 함께 전달될 메시지 본문입니다. 상품이나 이벤트를 시각적으로 강조할 때 유용합니다.',
-        image_url: 'https://via.placeholder.com/1024x512.png?text=Image+Preview',
+        image_url: 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview',
         buttons: [['웹사이트', '더 알아보기']]
     },
     '아이템리스트형': {
@@ -181,7 +193,7 @@ const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: strin
         <Typography sx={{ mb: 3, maxWidth: '600px' }}>원하는 알림톡 내용을 자유롭게 작성해보세요.</Typography>
         <Stack direction="row" spacing={1.5}>
             <Button variant="outlined" onClick={() => onExampleClick("배송 시작 알림톡 만들어줘")}>"배송 시작 알림톡"</Button>
-            <Button variant="outlined" onClick={() => onExampleClick("신규 가입 환영 메시지")}>"신규 가입 환영 메시지"</Button>
+            <Button variant="outlined" onClick={() => onExampleClick("신규 가입 환영 메시지 작성해줘")}>"신규 가입 환영 메시지"</Button>
         </Stack>
     </Box>
 );
@@ -304,7 +316,14 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
                     </svg>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, minHeight: 0, '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
+            <Box sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' },
+                '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' },
+                '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } }
+            }}>
                 {children}
             </Box>
         </Box>
@@ -324,7 +343,6 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
     const isStyleSelection = msg.options.includes('기본형') && msg.options.includes('이미지형') && msg.options.includes('아이템리스트형');
     const isFeedbackSelection = msg.options.includes('네, 수정할래요') && msg.options.includes('아니요, 괜찮아요');
 
-    // ★ 공통으로 사용할 버튼 스타일을 정의합니다.
     const buttonSx = {
         justifyContent: 'flex-start',
         textAlign: 'left',
@@ -332,7 +350,6 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
         padding: '10px 16px',
         lineHeight: 1.4,
         fontWeight: 500,
-        // 선택되지 않았을 때의 스타일 (추천 템플릿 버튼과 동일하게)
         '&.MuiButton-outlined': {
             borderColor: 'primary.main',
             color: 'primary.main',
@@ -353,7 +370,6 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
                             key={index}
                             variant={selectedStyle === option ? "contained" : "outlined"}
                             onClick={() => onStyleSelect(option)}
-                            // ★ 스타일을 적용합니다.
                             sx={buttonSx}
                         >
                             {option}
@@ -371,7 +387,7 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
     if (JSON.stringify(msg.options) === JSON.stringify(['예', '아니오'])) {
         title = "진행 여부 확인";
     } else if (isFeedbackSelection) {
-        title = "피드백 요청"; // ★ 피드백 옵션에 대한 제목 변경
+        title = "피드백 요청";
     }
 
     return (
@@ -383,7 +399,6 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
                         key={index}
                         variant="outlined"
                         onClick={() => onOptionSelect(option)}
-                        // ★ 스타일을 적용합니다.
                         sx={buttonSx}
                     >
                         {option}
@@ -497,6 +512,7 @@ export default function SuggestionPage() {
     const [conversation, setConversation] = useState<BotResponse[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [sessionState, setSessionState] = useState({});
     const [livePreviewTemplate, setLivePreviewTemplate] = useState<StructuredTemplate | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -505,6 +521,9 @@ export default function SuggestionPage() {
     const navigate = useNavigate();
     const effectRan = useRef(false);
     const [showLoadingMessage, setShowLoadingMessage] = useState(false);
+    const { currentSpace } = useAppStore();
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+    const [isConversationComplete, setIsConversationComplete] = useState(false);
 
 
     useEffect(() => {
@@ -541,6 +560,12 @@ export default function SuggestionPage() {
             const data = res.data;
             if (!data.success) throw new Error(data.response || 'API에서 요청 처리에 실패했습니다.');
 
+            // 완료 메시지 확인
+            const completionMessage = "템플릿 생성을 마칩니다. 이용해주셔서 감사합니다!";
+            if ((data.message || data.response)?.includes(completionMessage)) {
+                setIsConversationComplete(true);
+            }
+
             let templatesForMessage: StructuredTemplate[] = [];
 
             if (data.structured_templates && data.structured_templates.length > 0) {
@@ -549,7 +574,7 @@ export default function SuggestionPage() {
             else if (data.structured_template) {
                 if (data.hasImage) {
                     const baseTemplate = data.structured_template;
-                    const placeholderUrl = 'https://via.placeholder.com/1024x512.png?text=Image+Preview';
+                    const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
                     templatesForMessage = [
                         { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
                         { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
@@ -563,16 +588,16 @@ export default function SuggestionPage() {
             const newBotMessage: BotResponse = {
                 id: Date.now() + 1,
                 type: 'bot',
-                content: data.message || data.response, // ★ 백엔드에서 'message' 키 사용으로 변경 (기존 response와 호환)
+                content: data.message || data.response,
                 timestamp: getCurrentTime(),
                 templates: templatesForMessage,
                 options: data.options,
                 selected_template_id: hasTemplates ? 0 : null,
-                template: data.template, // ★ 추가: 템플릿 문자열
-                structured_template: data.structured_template, // ★ 추가: 구조화된 템플릿
-                buttons: data.buttons, // ★ 추가: 버튼 리스트
-                hasImage: data.hasImage, // ★ 추가: 이미지 유무
-                editable_variables: data.editable_variables, // ★ 추가: 편집 가능한 변수들
+                template: data.template,
+                structured_template: data.structured_template,
+                buttons: data.buttons,
+                hasImage: data.hasImage,
+                editable_variables: data.editable_variables,
             };
 
             setConversation(prev => [...prev, newBotMessage]);
@@ -580,11 +605,9 @@ export default function SuggestionPage() {
             const newState = data.state || {};
             setSessionState(newState);
 
-            // ★ 미리보기 업데이트: templates가 있거나 structured_template가 있으면 업데이트
             if (hasTemplates) {
                 setLivePreviewTemplate(templatesForMessage[0]);
             } else if (data.structured_template) {
-                // ★ 피드백 단계나 completed 단계에서 structured_template 하나만 제공될 때
                 setLivePreviewTemplate(data.structured_template);
             } else {
                 const isConfirmation = newBotMessage.options && JSON.stringify(newBotMessage.options) === JSON.stringify(['예', '아니오']);
@@ -593,7 +616,7 @@ export default function SuggestionPage() {
             }
 
             const autoCorrectionTriggerMessage = "AI가 자동으로 수정하겠습니다";
-            if (data.message && data.message.includes(autoCorrectionTriggerMessage)) { // ★ message 키로 변경
+            if (data.message && data.message.includes(autoCorrectionTriggerMessage)) {
                 isAutoCorrectionTriggered = true;
                 setTimeout(() => {
                     callChatApi("(자동 수정 진행)", newState);
@@ -633,6 +656,7 @@ export default function SuggestionPage() {
         const userMessage = message;
         setInputValue('');
         setSelectedStyleOption(null);
+        setIsConversationComplete(false); // 새 대화 시작 시 초기화
 
         setConversation(prev => {
             const clearedConversation = prev.map(msg => ({
@@ -672,6 +696,54 @@ export default function SuggestionPage() {
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
 
+    const handleSaveTemplate = async () => {
+        if (!livePreviewTemplate) {
+            setSnackbar({ open: true, message: '저장할 템플릿이 없습니다.', severity: 'error' });
+            return;
+        }
+        if (!currentSpace) {
+            setSnackbar({ open: true, message: '워크스페이스를 선택해주세요.', severity: 'error' });
+            return;
+        }
+
+        const finalBotMessage = conversation.slice().reverse().find(msg =>
+            msg.type === 'bot' && msg.editable_variables && msg.template
+        );
+
+        if (!finalBotMessage) {
+            setSnackbar({ open: true, message: '저장할 템플릿 정보를 찾을 수 없습니다. AI와의 대화를 완료해주세요.', severity: 'error' });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const payload = {
+                spaceId: currentSpace.spaceId,
+                title: livePreviewTemplate.title,
+                description: "AI 생성 템플릿",
+                type: "알림/정보",
+                template: finalBotMessage.template,
+                structuredTemplate: JSON.stringify(livePreviewTemplate),
+                editableVariables: JSON.stringify(finalBotMessage.editable_variables),
+                hasImage: !!livePreviewTemplate.image_url,
+            };
+
+            await apiClient.post('/template/save', payload);
+            setSnackbar({ open: true, message: '템플릿이 성공적으로 저장되었습니다!', severity: 'success' });
+
+        } catch (error) {
+            let errorMessage = '템플릿 저장에 실패했습니다.';
+            if (apiClient.isAxiosError(error) && error.response) {
+                const errorData = error.response.data as ApiErrorData;
+                errorMessage = errorData.detail || errorData.response || error.message;
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+            setSnackbar({ open: true, message: `오류: ${errorMessage}`, severity: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <ThemeProvider theme={customTheme}>
@@ -684,22 +756,21 @@ export default function SuggestionPage() {
                             flex: 1,
                             p: 2,
                             minHeight: 0,
-                            overflowY: 'auto', // 내용이 넘칠 때 세로 스크롤 생성
-                            display: 'flex', // 자식 요소(EmptyChatPlaceholder)를 flex item으로 다루기 위함
-                            flexDirection: 'column', // 메시지를 세로로 쌓기 위함
-                            '&::-webkit-scrollbar': { display: 'none' }, // 기존 스크롤바 숨김 스타일 유지
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            '&::-webkit-scrollbar': { display: 'none' },
                             scrollbarWidth: 'none'
                         }}>
                             {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => (
                                 <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
                                     {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
                                     <Box sx={{ maxWidth: '80%', display: 'flex', flexDirection: 'column', alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
-                                        <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : 'background.botMessage', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)', backdropFilter: 'none', border: 'none' }}>
+                                        <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : '#e2e8f0', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)', backdropFilter: 'none', border: 'none' }}>
                                             <Typography variant="body1">{msg.content}</Typography>
                                         </Paper>
 
-                                        {/* TemplateSelector: templates 있을 때만 (미리보기/선택 UI) */}
-                                        {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && (
+                                        {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && !(msg.options?.includes('네, 수정할래요')) && (
                                             <TemplateSelector
                                                 msg={msg}
                                                 onTemplateSelect={handleTemplateSelect}
@@ -708,9 +779,8 @@ export default function SuggestionPage() {
                                             />
                                         )}
 
-                                        {/* ★ 수정: OptionsPresenter - options 있으면 렌더링, 하지만 templates >= 3 시 스킵 (추천 단계 중복 방지) */}
                                         {msg.type === 'bot' && Array.isArray(msg.options) && msg.options.length > 0 &&
-                                            (!msg.templates || msg.templates.length < 3) && (  // ★ 핵심: templates < 3 시에만 옵션 렌더링
+                                            (!msg.templates || msg.templates.length < 3) && (
                                                 <OptionsPresenter
                                                     msg={msg}
                                                     onOptionSelect={handleSendMessage}
@@ -719,8 +789,6 @@ export default function SuggestionPage() {
                                                 />
                                             )}
 
-                                        {/* ★ 디버깅: options 없고 templates도 없으면 경고 (임시 – 나중에 제거) */}
-
                                         <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
                                     </Box>
                                 </Box>
@@ -728,7 +796,7 @@ export default function SuggestionPage() {
                             {showLoadingMessage && (
                                 <Box sx={{
                                     display: 'flex',
-                                    justifyContent: 'center', // ★ 중앙 정렬을 위해 추가
+                                    justifyContent: 'center',
                                     p: 2,
                                     mb: 2,
                                 }}>
@@ -737,26 +805,21 @@ export default function SuggestionPage() {
                                         elevation={0}
                                         sx={{
                                             p: '10px 16px',
-                                            // ★ 1. 네 모서리가 모두 동일한 둥근 형태
                                             borderRadius: '16px',
-                                            // ★ 2. 하얀색이 아닌, 은은한 회색 계열 배경
                                             bgcolor: '#e2e8f0',
                                             color: 'text.secondary',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: 1.5, // 아이콘과 텍스트 사이 간격 조정
-                                            boxShadow: 'none', // 그림자 제거로 더 깔끔하게
+                                            gap: 1.5,
+                                            boxShadow: 'none',
                                             backdropFilter: 'none',
                                             border: 'none'
                                         }}
                                     >
-                                        {/* ★ 3. 아바타 대신 아이콘을 직접 사용합니다. */}
                                         <AutoAwesomeIcon sx={{
                                             fontSize: 20,
                                             animation: 'pulse 2s infinite ease-in-out'
                                         }} />
-
-                                        {/* ★ 4. "반짝이는" 애니메이션을 텍스트에 적용합니다. */}
                                         <Typography
                                             variant="body2"
                                             sx={{
@@ -773,7 +836,6 @@ export default function SuggestionPage() {
                                     </Paper>
                                 </Box>
                             )}
-                            {/* ▲▲▲ 여기가 수정된 부분입니다 ▲▲▲ */}
                             <div ref={chatEndRef} />
                         </Box>
                         <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>
@@ -797,8 +859,7 @@ export default function SuggestionPage() {
                         </Box>
                     </InteractiveCard>
                 </Box>
-
-                {/* 2. 오른쪽 아이폰 미리보기 섹션 */}
+                {/* 2. 오른쪽 미리보기 섹션 */}
                 <Box sx={{
                     width: '360px',
                     minWidth: '360px',
@@ -813,8 +874,30 @@ export default function SuggestionPage() {
                             </Box>
                         )}
                     </IPhoneMockup>
+
+                    <Button
+                        variant="contained"
+                        size="large"
+                        startIcon={<SaveIcon />}
+                        onClick={handleSaveTemplate}
+                        disabled={!isConversationComplete || isSaving}
+                        sx={{ mt: 2, width: '100%', py: 1.5, fontSize: '1rem' }}
+                    >
+                        {isSaving ? '저장하는 중...' : '이 템플릿 저장하기'}
+                    </Button>
                 </Box>
             </Box>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </ThemeProvider>
     );
 }

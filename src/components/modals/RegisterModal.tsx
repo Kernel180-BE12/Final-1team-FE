@@ -118,6 +118,7 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
 
   const handleSubmit = async () => {
     setApiError('');
+    
     const newErrors = {
       username: validateField('username', formData.username),
       password: validateField('password', formData.password),
@@ -150,28 +151,25 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
       }
     } catch (error) {
       if (apiClient.isAxiosError(error) && error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
+      const data = error.response.data as { message?: string };
+      const message = data.message || ''; // 백엔드 메시지를 변수에 저장
 
-        // 2. data가 message 속성을 가진 객체인지 확인합니다.
-        if (typeof data === 'object' && data !== null && 'message' in data && typeof (data as { message: string }).message === 'string') {
-            // 백엔드가 구체적인 메시지를 주면, 그대로 사용합니다.
-            setApiError((data as { message: string }).message);
-        } 
-        // 3. ✨ 백엔드가 메시지를 안 줬을 경우, status 코드로 분기합니다.
-        else if (status >= 500) {
-            setApiError('서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        } else if (status >= 400) {
-            setApiError('입력 내용을 다시 확인해주세요.');
-        } else {
-            setApiError('알 수 없는 오류가 발생했습니다.');
-        }
-        console.error(`회원가입 실패 (상태 코드: ${status}):`, data);
+      // 1. 백엔드 메시지에 '아이디', '이메일', '존재', '사용' 같은 키워드가 포함되어 있는지 확인합니다.
+      const isDuplicateError = 
+        message.includes('아이디') || 
+        message.includes('이메일') || 
+        message.includes('존재') ||
+        message.includes('사용');
+
+      // 2. 만약 '중복 에러'가 아니라면, 그때만 버튼 위의 apiError를 설정합니다.
+      if (!isDuplicateError) {
+        setApiError(message || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
+      // 3. 만약 '중복 에러'라면, 아무것도 하지 않습니다. (setApiError를 호출하지 않음)
+      //    그러면 사용자는 이미 입력창 아래에 표시된 프론트엔드 에러 메시지만 보게 됩니다.
 
     } else {
-        // 4. 네트워크 에러 등 Axios 에러가 아닌 경우 (기존과 동일)
-        setApiError('네트워크에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.');
-        console.error('회원가입 실패 (네트워크 오류):', error);
+      setApiError('네트워크 오류 또는 알 수 없는 문제가 발생했습니다.');
     }
     } finally {
       setIsLoading(false); // 로딩 종료
@@ -197,12 +195,11 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
           회원가입
         </Typography>
         <Stack spacing={2}>
-          <TextField name="username" label="아이디" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.username} helperText={errors.username} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.username ? <CircularProgress size={20} /> : null, }}}/>
-          <TextField name="password" label="비밀번호" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.password} helperText={errors.password} disabled={isLoading} />
-          <TextField name="passwordConfirm" label="비밀번호 확인" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.passwordConfirm} helperText={errors.passwordConfirm} disabled={isLoading} />
           <TextField name="name" label="이름" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.name} helperText={errors.name} disabled={isLoading} />
+          <TextField name="username" label="아이디" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.username} helperText={errors.username} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.username ? <CircularProgress size={20} /> : null, }}}/>
           <TextField name="email" label="이메일" type="email" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.email} helperText={errors.email} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.email ? <CircularProgress size={20} /> : null, }}}/>
-          
+          <TextField name="password" label="비밀번호" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.password} helperText={errors.password} disabled={isLoading} />
+          <TextField name="passwordConfirm" label="비밀번호 확인" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.passwordConfirm} helperText={errors.passwordConfirm} disabled={isLoading} />          
           {apiError && (
             <Typography color="error" variant="body2" sx={{ textAlign: 'center' }}>
                 {apiError}
@@ -214,6 +211,7 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
             size="large" 
             fullWidth 
             onClick={handleSubmit}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={isLoading}
             sx={{ height: 56 }}
           >
