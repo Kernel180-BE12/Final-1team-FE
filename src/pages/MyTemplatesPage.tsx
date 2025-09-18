@@ -179,8 +179,12 @@ const MyTemplatesPage = () => {
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
         body { background: linear-gradient(135deg, #f5f7fa, #e9ecef); }
       `} />
-      
-      <Box sx={{ p: 4, minHeight: 'calc(100vh - 64px)' }}>
+
+        <Box sx={{
+            height: '100%',        // 부모(Outlet Wrapper)가 주는 높이를 100% 사용
+            overflowY: 'auto',     // 내용이 넘치면 세로 스크롤바 생성
+            p: 4,                  // 기존 패딩 유지
+        }}>
         <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Typography variant="h4">내 템플릿 목록</Typography>
