@@ -50,12 +50,10 @@ const PublicLayout = () => {
                 background: linear-gradient(-45deg, #e0eafc, #cfdef3, #e7eaf6, #a7bfe8); 
                 background-size: 400% 400%; 
                 animation: animated-gradient 15s ease infinite;
-                /* ★ 1. body 자체의 스크롤을 방지합니다. */
-                overflow: hidden;
             }
         `} />
         {/* ★ 2. 전체 레이아웃을 화면 높이에 꽉 채우고, 내부에서 스크롤이 발생하지 않도록 설정합니다. */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', minHeight: '100vh'}}>
         <AppBar
             position="fixed"
             sx={{
