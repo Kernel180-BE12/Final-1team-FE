@@ -68,6 +68,11 @@ const DashboardLayout = () => {
         //   default: alpha(primaryColor, 0.05),
         // }
       },
+      typography: {
+        fontFamily: '"Jua", "Nunito", "Roboto", sans-serif',
+        h4: { fontWeight: 700, color: '#4e342e' },
+        body2: { color: '#795548' },
+    },
     });
   }, [currentSpace]);
 

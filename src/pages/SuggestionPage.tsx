@@ -8,6 +8,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import apiClient from '../api';
+import useAppStore from '../store/useAppStore';
 
 
 
@@ -651,6 +652,51 @@ export default function SuggestionPage() {
     };
 
 
+
+
+    // 1. 스토어에서 saveTemplate 액션을 가져옵니다.
+  const { saveTemplate, currentSpace } = useAppStore();
+
+  // ... (기존 채팅 로직) ...
+
+  // 2. '저장하기' 버튼을 눌렀을 때 실행될 함수
+  const handleSaveTemplate = async () => {
+    // 3. AI 결과물이 아직 없으므로, '임시 계약'에 맞는 가짜 데이터를 만듭니다.
+    const fakeAiResult = {
+      title: `임시 저장된 템플릿 ${Date.now()}`,
+      description: "AI가 생성한 템플릿에 대한 설명입니다.",
+      type: "메시지형",
+      template: "안녕하세요, #{고객명}님! 임시 템플릿입니다.",
+      structuredTemplate: "...",
+      editableVariables: "...",
+      hasImage: false,
+    };
+
+    // 4. 현재 스페이스 ID와 가짜 데이터를 합쳐서 API에 보낼 payload를 완성합니다.
+    if (!currentSpace) {
+      alert("템플릿을 저장할 스페이스를 먼저 선택해주세요.");
+      return;
+    }
+    
+    const payload = {
+      spaceId: currentSpace.spaceId,
+      ...fakeAiResult,
+    };
+
+    // 5. 스토어의 saveTemplate 액션을 호출합니다.
+    try {
+      await saveTemplate(payload);
+      alert("템플릿이 성공적으로 저장되었습니다!");
+      // [선택] 저장 후 '내 템플릿 목록' 페이지로 이동할 수 있습니다.
+      // navigate('/templates');
+    } catch (error) {
+      console.error("임시 저장에 실패했습니다.", error);
+    }
+  };
+
+
+
+
     return (
         <ThemeProvider theme={customTheme}>
             <Box sx={{ display: 'flex', gap: 3, height: '100%', minHeight: 0 }}>
@@ -769,6 +815,12 @@ export default function SuggestionPage() {
                             </Paper>
                         </Box>
                     </InteractiveCard>
+                </Box>
+
+                <Box sx={{ position: 'fixed', top: 100, right: 20, zIndex: 9999 }}>
+                <Button variant="contained" color="secondary" onClick={handleSaveTemplate}>
+                    (임시) 템플릿 저장 테스트
+                </Button>
                 </Box>
 
                 {/* 2. 오른쪽 아이폰 미리보기 섹션 */}
