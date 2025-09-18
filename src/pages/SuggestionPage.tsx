@@ -7,13 +7,10 @@ import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import SaveIcon from '@mui/icons-material/Save'; // ★★★ 1. 누락된 아이콘 추가 ★★★
 
 import apiClient from '../api';
 import useAppStore from '../store/useAppStore';
-
-
-import apiClient from '../api';
-import useAppStore from "../store/useAppStore.ts";
 
 
 // --- 타입 정의 (기존과 동일) ---
@@ -30,9 +27,16 @@ interface StructuredTemplate {
     image_layout?: 'header' | 'background' | null;
 }
 
+interface TemplateVariable {
+    name: string;        // 예: "고객명"
+    type: 'string' | 'number'; // 변수의 타입
+    example?: string | number;   // 변수의 예시 값 (optional)
+}
+
+// 기존 인터페이스를 새로운 타입으로 교체
 interface EditableVariables {
     parameterized_template: string;
-    variables: any[];
+    variables: TemplateVariable[]; // any[] 대신 TemplateVariable[] 사용
 }
 
 interface BotResponse {
@@ -170,7 +174,7 @@ const customTheme = createTheme({
 
 const InteractiveCard = styled(Paper)({});
 
-// --- 유틸리티 및 헬퍼 컴포넌트 ---
+// --- 유틸리티 및 헬퍼 컴포넌트 (기존과 동일) ---
 const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: string) => void }) => (
     <Box sx={{
         display: 'flex',
@@ -501,7 +505,7 @@ export default function SuggestionPage() {
     const [conversation, setConversation] = useState<BotResponse[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isSaving, setIsSaving] = useState(false); // ★ 저장 로딩 상태 추가
+    const [isSaving, setIsSaving] = useState(false);
     const [sessionState, setSessionState] = useState({});
     const [livePreviewTemplate, setLivePreviewTemplate] = useState<StructuredTemplate | null>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -511,7 +515,7 @@ export default function SuggestionPage() {
     const effectRan = useRef(false);
     const [showLoadingMessage, setShowLoadingMessage] = useState(false);
     const currentSpace = useAppStore((state) => state.currentSpace); // ★ Zustand 스토어에서 현재 space 정보 가져오기
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' }); // ★ 스낵바 상태 추가
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
 
     useEffect(() => {
@@ -541,7 +545,7 @@ export default function SuggestionPage() {
 
         try {
             // ★ 모의 apiClient를 사용하도록 URL 수정
-            const res = await apiClient.post('/template/create-template', {
+            const res = await apiClient.post('http://localhost:8000/api/chat', {
                 message,
                 state: currentState
             });
@@ -678,7 +682,6 @@ export default function SuggestionPage() {
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
 
-    // ★★★★★ 템플릿 저장 함수 추가 ★★★★★
     const handleSaveTemplate = async () => {
         if (!livePreviewTemplate) {
             setSnackbar({ open: true, message: '저장할 템플릿이 없습니다.', severity: 'error' });
@@ -689,7 +692,6 @@ export default function SuggestionPage() {
             return;
         }
 
-        // 대화 내용에서 최종 템플릿 정보를 찾습니다.
         const finalBotMessage = conversation.slice().reverse().find(msg =>
             msg.type === 'bot' && msg.editable_variables && msg.template
         );
@@ -704,8 +706,8 @@ export default function SuggestionPage() {
             const payload = {
                 spaceId: currentSpace.spaceId,
                 title: livePreviewTemplate.title,
-                description: "AI 생성 템플릿", // 기본 설명
-                type: "알림/정보", // 기본 타입
+                description: "AI 생성 템플릿",
+                type: "알림/정보",
                 template: finalBotMessage.template,
                 structuredTemplate: JSON.stringify(livePreviewTemplate),
                 editableVariables: JSON.stringify(finalBotMessage.editable_variables),
@@ -729,51 +731,7 @@ export default function SuggestionPage() {
         }
     };
 
-
-
-
-    // 1. 스토어에서 saveTemplate 액션을 가져옵니다.
-  const { saveTemplate, currentSpace } = useAppStore();
-
-  // ... (기존 채팅 로직) ...
-
-  // 2. '저장하기' 버튼을 눌렀을 때 실행될 함수
-  const handleSaveTemplate = async () => {
-    // 3. AI 결과물이 아직 없으므로, '임시 계약'에 맞는 가짜 데이터를 만듭니다.
-    const fakeAiResult = {
-      title: `임시 저장된 템플릿 ${Date.now()}`,
-      description: "AI가 생성한 템플릿에 대한 설명입니다.",
-      type: "메시지형",
-      template: "안녕하세요, #{고객명}님! 임시 템플릿입니다.",
-      structuredTemplate: "...",
-      editableVariables: "...",
-      hasImage: false,
-    };
-
-    // 4. 현재 스페이스 ID와 가짜 데이터를 합쳐서 API에 보낼 payload를 완성합니다.
-    if (!currentSpace) {
-      alert("템플릿을 저장할 스페이스를 먼저 선택해주세요.");
-      return;
-    }
-    
-    const payload = {
-      spaceId: currentSpace.spaceId,
-      ...fakeAiResult,
-    };
-
-    // 5. 스토어의 saveTemplate 액션을 호출합니다.
-    try {
-      await saveTemplate(payload);
-      alert("템플릿이 성공적으로 저장되었습니다!");
-      // [선택] 저장 후 '내 템플릿 목록' 페이지로 이동할 수 있습니다.
-      // navigate('/templates');
-    } catch (error) {
-      console.error("임시 저장에 실패했습니다.", error);
-    }
-  };
-
-
-
+    // ★★★ 2. 이 부분에 있던 중복된 useAppStore와 handleSaveTemplate 함수를 삭제했습니다. ★★★
 
     return (
         <ThemeProvider theme={customTheme}>
@@ -904,7 +862,6 @@ export default function SuggestionPage() {
                         )}
                     </IPhoneMockup>
 
-                    {/* ★★★★★ 저장 버튼 UI 추가 ★★★★★ */}
                     <Button
                         variant="contained"
                         size="large"
@@ -918,7 +875,6 @@ export default function SuggestionPage() {
                 </Box>
             </Box>
 
-            {/* ★★★★★ 스낵바(알림) UI 추가 ★★★★★ */}
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={6000}
@@ -932,4 +888,3 @@ export default function SuggestionPage() {
         </ThemeProvider>
     );
 }
-
