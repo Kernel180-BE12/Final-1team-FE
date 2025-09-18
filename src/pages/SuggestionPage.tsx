@@ -193,7 +193,7 @@ const EmptyChatPlaceholder = ({ onExampleClick }: { onExampleClick: (text: strin
         <Typography sx={{ mb: 3, maxWidth: '600px' }}>원하는 알림톡 내용을 자유롭게 작성해보세요.</Typography>
         <Stack direction="row" spacing={1.5}>
             <Button variant="outlined" onClick={() => onExampleClick("배송 시작 알림톡 만들어줘")}>"배송 시작 알림톡"</Button>
-            <Button variant="outlined" onClick={() => onExampleClick("신규 가입 환영 메시지")}>"신규 가입 환영 메시지"</Button>
+            <Button variant="outlined" onClick={() => onExampleClick("신규 가입 환영 메시지 작성해줘")}>"신규 가입 환영 메시지"</Button>
         </Stack>
     </Box>
 );
@@ -316,7 +316,15 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
                     </svg>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, minHeight: 0, '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
+            {/* ★★★★★ 수정된 부분 ★★★★★ */}
+            <Box sx={{ 
+                flex: 1, 
+                minHeight: 0, 
+                overflowY: 'auto', // 세로 스크롤 활성화
+                '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, 
+                '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, 
+                '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } 
+            }}>
                 {children}
             </Box>
         </Box>
@@ -514,7 +522,7 @@ export default function SuggestionPage() {
     const navigate = useNavigate();
     const effectRan = useRef(false);
     const [showLoadingMessage, setShowLoadingMessage] = useState(false);
-    const currentSpace = useAppStore((state) => state.currentSpace);
+    const { currentSpace } = useAppStore();
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
 
@@ -544,7 +552,7 @@ export default function SuggestionPage() {
         }, 1000);
 
         try {
-            const res = await apiClient.post('http://localhost:8000/api/chat', {
+            const res = await apiClient.post('/template/create-template', {
                 message,
                 state: currentState
             });
@@ -844,6 +852,7 @@ export default function SuggestionPage() {
                         </Box>
                     </InteractiveCard>
                 </Box>
+                {/* 2. 오른쪽 미리보기 섹션 */}
                 <Box sx={{
                     width: '360px',
                     minWidth: '360px',
