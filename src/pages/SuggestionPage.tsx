@@ -9,8 +9,6 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import apiClient from '../api';
 
-
-
 interface ApiErrorData {
     detail?: string;
     response?: string;
@@ -25,6 +23,11 @@ interface StructuredTemplate {
     image_layout?: 'header' | 'background' | null;
 }
 
+interface EditableVariables {
+    parameterized_template: string;
+    variables: any[];
+}
+
 interface BotResponse {
     id: number;
     type: 'bot' | 'user';
@@ -34,6 +37,11 @@ interface BotResponse {
     selected_template_id?: number | null;
     options?: string[];
     isFinalized?: boolean;
+    template?: string; // 추가: 템플릿 문자열
+    structured_template?: StructuredTemplate; // 추가: 구조화된 템플릿
+    buttons?: [string, string][]; // 추가: 버튼 리스트
+    hasImage?: boolean; // 추가: 이미지 유무
+    editable_variables?: EditableVariables; // 추가: 편집 가능한 변수들
 }
 
 const pulseAnimation = `
@@ -72,7 +80,7 @@ const STYLE_SKELETONS: { [key: string]: StructuredTemplate } = {
 };
 
 // --- 스타일 컴포넌트 ---
-const Placeholder = styled('span' )({
+const Placeholder = styled('span')({
     color: '#3b82f6',
     fontWeight: 'bold',
     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -296,7 +304,7 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
                     </svg>
                 </Box>
             </Box>
-            <Box sx={{ flex: 1, inHeight: 0, '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
+            <Box sx={{ flex: 1, minHeight: 0, '&::-webkit-scrollbar': { width: '8px', backgroundColor: 'transparent' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'transparent', borderRadius: '4px' }, '&:hover': { '&::-webkit-scrollbar-thumb': { backgroundColor: 'rgba(0, 0, 0, 0.2)' } } }}>
                 {children}
             </Box>
         </Box>
@@ -314,6 +322,7 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
     if (!msg.options || msg.options.length === 0) return null;
 
     const isStyleSelection = msg.options.includes('기본형') && msg.options.includes('이미지형') && msg.options.includes('아이템리스트형');
+    const isFeedbackSelection = msg.options.includes('네, 수정할래요') && msg.options.includes('아니요, 괜찮아요');
 
     // ★ 공통으로 사용할 버튼 스타일을 정의합니다.
     const buttonSx = {
@@ -361,6 +370,8 @@ const OptionsPresenter = ({ msg, onOptionSelect, selectedStyle, onStyleSelect }:
     let title = "옵션 선택";
     if (JSON.stringify(msg.options) === JSON.stringify(['예', '아니오'])) {
         title = "진행 여부 확인";
+    } else if (isFeedbackSelection) {
+        title = "피드백 요청"; // ★ 피드백 옵션에 대한 제목 변경
     }
 
     return (
@@ -522,7 +533,7 @@ export default function SuggestionPage() {
         }, 1000);
 
         try {
-            const res = await apiClient.post('/template/create-template', {
+            const res = await apiClient.post('http://localhost:8000/api/chat', {
                 message,
                 state: currentState
             });
@@ -552,11 +563,16 @@ export default function SuggestionPage() {
             const newBotMessage: BotResponse = {
                 id: Date.now() + 1,
                 type: 'bot',
-                content: data.response,
+                content: data.message || data.response, // ★ 백엔드에서 'message' 키 사용으로 변경 (기존 response와 호환)
                 timestamp: getCurrentTime(),
                 templates: templatesForMessage,
                 options: data.options,
                 selected_template_id: hasTemplates ? 0 : null,
+                template: data.template, // ★ 추가: 템플릿 문자열
+                structured_template: data.structured_template, // ★ 추가: 구조화된 템플릿
+                buttons: data.buttons, // ★ 추가: 버튼 리스트
+                hasImage: data.hasImage, // ★ 추가: 이미지 유무
+                editable_variables: data.editable_variables, // ★ 추가: 편집 가능한 변수들
             };
 
             setConversation(prev => [...prev, newBotMessage]);
@@ -564,15 +580,20 @@ export default function SuggestionPage() {
             const newState = data.state || {};
             setSessionState(newState);
 
+            // ★ 미리보기 업데이트: templates가 있거나 structured_template가 있으면 업데이트
             if (hasTemplates) {
                 setLivePreviewTemplate(templatesForMessage[0]);
+            } else if (data.structured_template) {
+                // ★ 피드백 단계나 completed 단계에서 structured_template 하나만 제공될 때
+                setLivePreviewTemplate(data.structured_template);
             } else {
                 const isConfirmation = newBotMessage.options && JSON.stringify(newBotMessage.options) === JSON.stringify(['예', '아니오']);
-                if (!isConfirmation) setLivePreviewTemplate(null);
+                const isFeedback = newBotMessage.options && newBotMessage.options.includes('네, 수정할래요');
+                if (!isConfirmation && !isFeedback) setLivePreviewTemplate(null);
             }
 
             const autoCorrectionTriggerMessage = "AI가 자동으로 수정하겠습니다";
-            if (data.response.includes(autoCorrectionTriggerMessage)) {
+            if (data.message && data.message.includes(autoCorrectionTriggerMessage)) { // ★ message 키로 변경
                 isAutoCorrectionTriggered = true;
                 setTimeout(() => {
                     callChatApi("(자동 수정 진행)", newState);
@@ -603,6 +624,7 @@ export default function SuggestionPage() {
             clearTimeout(loadingTimer);
             setShowLoadingMessage(false);
         }
+
     };
 
 
@@ -657,7 +679,7 @@ export default function SuggestionPage() {
 
                 {/* 1. 왼쪽 채팅창 섹션 */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
                         <Box sx={{
                             flex: 1,
                             p: 2,
@@ -676,6 +698,7 @@ export default function SuggestionPage() {
                                             <Typography variant="body1">{msg.content}</Typography>
                                         </Paper>
 
+                                        {/* TemplateSelector: templates 있을 때만 (미리보기/선택 UI) */}
                                         {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && (
                                             <TemplateSelector
                                                 msg={msg}
@@ -685,14 +708,18 @@ export default function SuggestionPage() {
                                             />
                                         )}
 
-                                        {msg.type === 'bot' && (!msg.templates || msg.templates.length === 0) && msg.options && (
-                                            <OptionsPresenter
-                                                msg={msg}
-                                                onOptionSelect={handleSendMessage}
-                                                selectedStyle={selectedStyleOption}
-                                                onStyleSelect={handleStyleSelect}
-                                            />
-                                        )}
+                                        {/* ★ 수정: OptionsPresenter - options 있으면 렌더링, 하지만 templates >= 3 시 스킵 (추천 단계 중복 방지) */}
+                                        {msg.type === 'bot' && Array.isArray(msg.options) && msg.options.length > 0 &&
+                                            (!msg.templates || msg.templates.length < 3) && (  // ★ 핵심: templates < 3 시에만 옵션 렌더링
+                                                <OptionsPresenter
+                                                    msg={msg}
+                                                    onOptionSelect={handleSendMessage}
+                                                    selectedStyle={selectedStyleOption}
+                                                    onStyleSelect={handleStyleSelect}
+                                                />
+                                            )}
+
+                                        {/* ★ 디버깅: options 없고 templates도 없으면 경고 (임시 – 나중에 제거) */}
 
                                         <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
                                     </Box>
