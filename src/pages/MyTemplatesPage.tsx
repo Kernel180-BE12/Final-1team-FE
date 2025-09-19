@@ -72,7 +72,6 @@ const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
                     display: 'flex',
                     flexDirection: 'column'
                 }}>
-                    {/* ★ zIndex 제거: 이제 이 부분도 오버레이에 덮입니다. */}
                     <Box sx={{ bgcolor: '#FFEB00', p: '10px 12px', position: 'relative' }}>
                         <Typography sx={{ fontSize: '12px', color: '#000', fontWeight: 'bold' }}>알림톡 도착</Typography>
                     </Box>
@@ -100,7 +99,6 @@ const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
                     </Box>
 
                     {buttons && buttons.length > 0 && (
-                        // ★ zIndex 제거: 이제 이 부분도 오버레이에 덮입니다.
                         <Box sx={{ borderTop: '1px solid #f0f0f0', position: 'relative', bgcolor: '#fff' }}>
                             {buttons.map(([text], index) => (
                                 <Box key={index} sx={{ textAlign: 'center', p: '14px 16px', fontSize: '15px', fontWeight: '500', color: '#555', cursor: 'pointer' }}>
@@ -118,13 +116,10 @@ const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
 
 const MyTemplatesPage = () => {
   const navigate = useNavigate();
+  // ★ 2. 스토어에서 deleteTemplate 액션을 제거합니다.
   const { templates = [], isLoadingTemplates = false, fetchTemplates, currentSpace } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   
-  // ★ 메뉴 관련 state 및 핸들러 제거
-  // const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  // const [currentTemplateId, setCurrentTemplateId] = useState<null | number>(null);
-  // const isMenuOpen = Boolean(menuAnchorEl);
 
   useEffect(() => {
     if (currentSpace) {
@@ -132,15 +127,9 @@ const MyTemplatesPage = () => {
     }
   }, [currentSpace, fetchTemplates]);
 
-  // ★ 메뉴 및 편집 관련 핸들러 제거
-  // const handleMenuOpen = ...
-  // const handleMenuClose = ...
-  // const handleEdit = ...
-
-  // ★ 삭제 함수를 templateId를 직접 받도록 수정
+  // ★ 3. handleDelete 함수가 다시 apiClient를 직접 호출하도록 수정합니다.
   const handleDelete = async (templateIdToDelete: number) => {
     if (currentSpace) {
-      // 사용자에게 한번 더 확인
       if (window.confirm("정말로 이 템플릿을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
         try {
           await apiClient.delete('/template/delete', {
@@ -181,14 +170,14 @@ const MyTemplatesPage = () => {
       `} />
 
         <Box sx={{
-            height: '100%',        // 부모(Outlet Wrapper)가 주는 높이를 100% 사용
-            overflowY: 'auto',     // 내용이 넘치면 세로 스크롤바 생성
-            p: 4,                  // 기존 패딩 유지
+            height: '100%',
+            overflowY: 'auto',
+            p: 4,
         }}>
         <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
             <Typography variant="h4">내 템플릿 목록</Typography>
-            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate('/suggestion')}>
+            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate('../suggestion')}>
               AI로 새 템플릿 만들기
             </Button>
           </Box>
@@ -248,9 +237,9 @@ const MyTemplatesPage = () => {
                     
                     <Box className="dim-overlay" sx={{
                       position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                      backgroundColor: 'rgba(0,0,0,0.5)', // 어둡게 변경
+                      backgroundColor: 'rgba(0,0,0,0.5)',
                       borderRadius: '16px',
-                      zIndex: 1, // 미리보기 위에 오도록 zIndex 설정
+                      zIndex: 1,
                     }} />
                     <Box 
                       className="actions-overlay"
@@ -260,17 +249,16 @@ const MyTemplatesPage = () => {
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
                         display: 'flex',
-                        zIndex: 2, // 오버레이 위에 오도록 zIndex 설정
+                        zIndex: 2,
                       }}
                     >
-                        {/* ★ 버튼을 '삭제하기'로 변경하고 onClick 핸들러 연결 */}
                         <Button 
                           variant="contained" 
                           startIcon={<DeleteIcon />}
                           onClick={() => handleDelete(template.id)}
                           sx={{
                             backgroundColor: 'white',
-                            color: '#d32f2f', // 삭제 버튼이므로 붉은색 텍스트
+                            color: '#d32f2f',
                             fontWeight: 'bold',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                             '&:hover': {
@@ -288,11 +276,9 @@ const MyTemplatesPage = () => {
           )}
         </Box>
       </Box>
-
-      {/* ★ 더 이상 사용하지 않는 메뉴 컴포넌트 삭제 */}
-      {/* <Menu ... /> */}
     </>
   );
 };
 
 export default MyTemplatesPage;
+

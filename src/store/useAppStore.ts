@@ -18,8 +18,16 @@ interface User {
 }
 
 // --- 템플릿 타입 정의 ---
+// ★ 1. 백엔드 API 응답에 대한 타입을 새로 정의합니다.
+interface ApiTemplate {
+  templateId: number;
+  title: string;
+  parameterizedTemplate: string;
+}
+
+// 프론트엔드에서 사용할 템플릿 타입
 export interface Template {
-  id: number;
+  id: number; // 이 id가 이제 실제 templateId가 됩니다.
   title: string;
   parameterizedTemplate: string;
 }
@@ -37,11 +45,11 @@ export interface TemplatePayload {
 
 // --- 연락처 타입 정의 ---
 export interface Contact {
-  id: number; // API 응답에는 없지만, 프론트에서 key prop 등으로 사용하기 위해 필요.
+  id: number;
   name: string;
   phoneNumber: string;
   email: string;
-  tag?: string; // 태그는 선택적일 수 있음.
+  tag?: string;
 }
 
 export interface UpdateContactPayload extends Omit<Contact, 'id'> {
@@ -84,7 +92,6 @@ interface MyActions {
 type AppState = MyState & MyActions;
 
 // --- Zustand 스토어 생성 ---
-// 1. 상태(State)와 상태를 변경하는 순수 함수들만 포함하는 StateCreator를 먼저 정의합니다.
 const stateCreator: StateCreator<AppState, [], [], MyState> = (_set) => ({
   isLoggedIn: false,
   user: null,
@@ -100,7 +107,6 @@ const stateCreator: StateCreator<AppState, [], [], MyState> = (_set) => ({
 });
 
 
-// 2. 액션(Actions)을 정의하는 별도의 함수를 만듭니다.
 const actionsCreator: (
   set: (partial: Partial<AppState>) => void,
   get: () => AppState
@@ -119,10 +125,20 @@ const actionsCreator: (
         sortedSpaces: [],
         templates: [],
         contacts: [],
+        currentSpace: null,
+        isSpacesInitialized: false,
       });
     }
   },
-  setCurrentSpace: (space) => set({ currentSpace: space }),
+  setCurrentSpace: (space) => {
+    if (get().currentSpace?.spaceId !== space?.spaceId) {
+      set({ 
+        currentSpace: space,
+        templates: [],
+        contacts: [],
+      });
+    }
+  },
   fetchSpaces: async () => {
     if (!get().isLoggedIn) return;
     set({ isLoading: true });
@@ -153,14 +169,22 @@ const actionsCreator: (
   fetchTemplates: async () => {
     const currentSpaceId = get().currentSpace?.spaceId;
     if (!currentSpaceId) {
-      set({ templates: [] });
+      set({ templates: [] }); 
       return;
     }
     set({ isLoadingTemplates: true });
     try {
-      const response = await apiClient.get<Omit<Template, 'id'>[]>(`/template/list?spaceId=${currentSpaceId}`);
-      const templatesWithId = response.data.map((t, index) => ({ ...t, id: index }));
-      set({ templates: templatesWithId });
+      // ★ 2. API 응답 타입을 새로 만든 ApiTemplate으로 지정합니다.
+      const response = await apiClient.get<ApiTemplate[]>(`/template/list?spaceId=${currentSpaceId}`);
+
+      // ★ 3. 가짜 ID(index) 대신, 서버가 보내준 진짜 templateId를 id로 사용합니다.
+      const templatesWithRealId = response.data.map((t) => ({
+        id: t.templateId,
+        title: t.title,
+        parameterizedTemplate: t.parameterizedTemplate
+      }));
+
+      set({ templates: templatesWithRealId });
     } catch (error) {
       console.error('템플릿 목록을 불러오는 데 실패했습니다:', error);
       set({ templates: [] });
@@ -180,20 +204,18 @@ const actionsCreator: (
     }
     set({ isLoadingContacts: true });
     try {
+      // TODO: 연락처 API도 ID를 포함하여 응답을 주도록 백엔드에 요청해야 합니다.
       const response = await apiClient.get<{ contacts: { name: string; phoneNum: string; email: string; }[] }>(`/space/contact/${currentSpaceId}`);
       const fetchedContacts = response.data.contacts.map((c, index) => ({
-        id: index,
+        id: index, // 현재는 임시 ID 사용 중
         name: c.name,
         phoneNumber: c.phoneNum,
         email: c.email,
       }));
       set({ contacts: fetchedContacts });
     } catch {
-      // 전역 핸들러가 사용자에게 에러를 보여주므로, 여기서는 콘솔 로그는 선택사항입니다.
-      // 가장 중요한 것은 '실패 시 상태를 초기화'하는 것입니다.
       set({ contacts: [] }); 
     } finally {
-      // 성공하든, 실패하든 로딩 상태는 항상 해제합니다.
       set({ isLoadingContacts: false });
     }
   },
@@ -228,16 +250,15 @@ const actionsCreator: (
   },
 });
 
-// 3. 최종적으로 스토어를 생성할 때, 상태와 액션을 합칩니다.
 const useAppStore = create<AppState>()(
   persist(
     (set, get, api) => ({
-      // 'any' 타입을 사용하던 세 번째 인자를 제거하여 오류를 해결합니다.
-      ...stateCreator(set, get, api),          // 상태 부분
-      ...actionsCreator(set, get),          // 액션 부분
+      ...stateCreator(set, get, api),
+      ...actionsCreator(set, get),
     }),
     { name: 'app-storage' }
   )
 );
 
 export default useAppStore;
+
