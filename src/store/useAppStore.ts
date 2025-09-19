@@ -125,7 +125,7 @@ const actionsCreator: (
         sortedSpaces: [],
         templates: [],
         contacts: [],
-        currentSpace: null,
+        // currentSpace: null,
         isSpacesInitialized: false,
       });
     }
