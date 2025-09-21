@@ -18,16 +18,14 @@ interface User {
 }
 
 // --- 템플릿 타입 정의 ---
-// ★ 1. 백엔드 API 응답에 대한 타입을 새로 정의합니다.
 interface ApiTemplate {
   templateId: number;
   title: string;
   parameterizedTemplate: string;
 }
 
-// 프론트엔드에서 사용할 템플릿 타입
 export interface Template {
-  id: number; // 이 id가 이제 실제 templateId가 됩니다.
+  id: number;
   title: string;
   parameterizedTemplate: string;
 }
@@ -81,6 +79,7 @@ interface MyActions {
   logout: () => Promise<void>;
   setCurrentSpace: (space: Space | null) => void;
   fetchSpaces: () => Promise<void>;
+  createSpace: (payload: { spaceName: string; ownerName: string }) => Promise<Space>; // 스페이스 생성 액션
   fetchTemplates: () => Promise<void>;
   saveTemplate: (payload: TemplatePayload) => Promise<void>;
   fetchContacts: () => Promise<void>;
@@ -125,7 +124,6 @@ const actionsCreator: (
         sortedSpaces: [],
         templates: [],
         contacts: [],
-        // currentSpace: null,
         isSpacesInitialized: false,
       });
     }
@@ -166,6 +164,13 @@ const actionsCreator: (
       set({ isSpacesInitialized: true });
     }
   },
+  createSpace: async (payload) => {
+    const response = await apiClient.post<Space>('/spaces', payload);
+    // 생성 성공 후, 스페이스 목록을 다시 불러와 화면을 갱신합니다.
+    await get().fetchSpaces();
+    // 생성된 스페이스 객체를 반환하여 즉시 다른 동작을 할 수 있도록 합니다.
+    return response.data;
+  },
   fetchTemplates: async () => {
     const currentSpaceId = get().currentSpace?.spaceId;
     if (!currentSpaceId) {
@@ -174,16 +179,12 @@ const actionsCreator: (
     }
     set({ isLoadingTemplates: true });
     try {
-      // ★ 2. API 응답 타입을 새로 만든 ApiTemplate으로 지정합니다.
       const response = await apiClient.get<ApiTemplate[]>(`/template/list?spaceId=${currentSpaceId}`);
-
-      // ★ 3. 가짜 ID(index) 대신, 서버가 보내준 진짜 templateId를 id로 사용합니다.
       const templatesWithRealId = response.data.map((t) => ({
         id: t.templateId,
         title: t.title,
         parameterizedTemplate: t.parameterizedTemplate
       }));
-
       set({ templates: templatesWithRealId });
     } catch (error) {
       console.error('템플릿 목록을 불러오는 데 실패했습니다:', error);
@@ -207,7 +208,7 @@ const actionsCreator: (
       // TODO: 연락처 API도 ID를 포함하여 응답을 주도록 백엔드에 요청해야 합니다.
       const response = await apiClient.get<{ contacts: { name: string; phoneNum: string; email: string; }[] }>(`/space/contact/${currentSpaceId}`);
       const fetchedContacts = response.data.contacts.map((c, index) => ({
-        id: index, // 현재는 임시 ID 사용 중
+        id: index,
         name: c.name,
         phoneNumber: c.phoneNum,
         email: c.email,
