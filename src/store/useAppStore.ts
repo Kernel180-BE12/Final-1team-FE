@@ -87,6 +87,7 @@ interface MyActions {
   addContacts: (payload: AddContactsPayload) => Promise<void>;
   updateContact: (payload: UpdateContactPayload) => Promise<void>;
   deleteContact: (contactId: number) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 type AppState = MyState & MyActions;
@@ -248,6 +249,12 @@ const actionsCreator: (
     });
     get().fetchContacts();
   },
+  deleteAccount: async () => {
+    await apiClient.delete('/user/delete');
+
+    // 탈퇴 성공 시 로그아웃 액션 호출하여 모든 상태 초기화. get()를 사용하여 스토어 내부의 다른 액션 호출
+    await get().logout();
+  }
 });
 
 const useAppStore = create<AppState>()(
@@ -261,4 +268,3 @@ const useAppStore = create<AppState>()(
 );
 
 export default useAppStore;
-
