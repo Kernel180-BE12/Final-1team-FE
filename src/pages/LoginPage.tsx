@@ -141,66 +141,72 @@ const LoginPage = () => {
                 }
             }}
         >
-            <Stack spacing={2.5}>
-            <Typography variant="h4" component="h1" align="center" sx={{ fontWeight: 'bold' }} onClick={() => navigate('/agent')}>
-                AI 템플릿 만들기
-            </Typography>
+            <form onSubmit={(e) => {
+                e.preventDefault(); // ★ 2. 브라우저의 기본 동작을 막습니다.
+                handleLogin();      // ★ 3. 기존 로그인 함수를 호출합니다.
+            }}>
 
-            <TextField
-                fullWidth
-                label="아이디"
-                variant="outlined"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                error={!!usernameError}
-                helperText={usernameError}
-            />
-            <TextField
-                fullWidth
-                label="비밀번호"
-                type={showPassword ? 'text' : 'password'}
-                variant="outlined"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                error={!!passwordError}
-                helperText={passwordError}
-                InputProps={{
-                    endAdornment: (
-                        <InputAdornment position="end">
-                        <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                        >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                        </InputAdornment>
-                    ),
-                }}
-            />
+                <Stack spacing={2.5}>
+                <Typography variant="h4" component="h1" align="center" sx={{ fontWeight: 'bold' }} onClick={() => navigate('/agent')}>
+                    AI 템플릿 만들기
+                </Typography>
 
-            <Button
-                fullWidth
-                variant="contained"
-                size="large"
-                sx={{ mt: 1, py: 1.5 }}
-                onClick={handleLogin}
-            >
-                로그인
-            </Button>
+                <TextField
+                    fullWidth
+                    label="아이디"
+                    variant="outlined"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    error={!!usernameError}
+                    helperText={usernameError}
+                />
+                <TextField
+                    fullWidth
+                    label="비밀번호"
+                    type={showPassword ? 'text' : 'password'}
+                    variant="outlined"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    error={!!passwordError}
+                    helperText={passwordError}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                            <IconButton
+                                aria-label="toggle password visibility"
+                                onClick={handleClickShowPassword}
+                                onMouseDown={handleMouseDownPassword}
+                                edge="end"
+                            >
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                            </InputAdornment>
+                        ),
+                    }}
+                />
 
-            {/* { <Divider sx={{ my: 2 }}>또는</Divider> }
-            { <Stack direction="row" spacing={2} justifyContent="center">
-                <IconButton sx={{ width: 56, height: 56, backgroundColor: '#FEE500', '&:hover': { backgroundColor: '#f0d900' } }}>K</IconButton>
-            </Stack> } */}
+                <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    size="large"
+                    sx={{ mt: 1, py: 1.5 }}
+                >
+                    로그인
+                </Button>
 
-            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
-                <Button size="small" onClick={handleSignupClick}>회원가입</Button>
-                <Divider orientation="vertical" flexItem />
-                <Button size="small" onClick={handleOpenModal}>비밀번호 재설정</Button>
-            </Stack>
-            </Stack>
+                {/* { <Divider sx={{ my: 2 }}>또는</Divider> }
+                { <Stack direction="row" spacing={2} justifyContent="center">
+                    <IconButton sx={{ width: 56, height: 56, backgroundColor: '#FEE500', '&:hover': { backgroundColor: '#f0d900' } }}>K</IconButton>
+                </Stack> } */}
+
+                    <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
+                        <Button size="small" onClick={handleSignupClick}>회원가입</Button>
+                        <Divider orientation="vertical" flexItem />
+                        <Button size="small" onClick={handleOpenModal}>비밀번호 재설정</Button>
+                    </Stack>
+                </Stack>
+            </form>
         </Paper>
         </Box>
 

@@ -1,6 +1,7 @@
-import { Box, Typography, Paper, TextField, Button, Avatar, Stack, Alert, Snackbar, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, TextField, Button, Avatar, Stack, Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import useAppStore from '../store/useAppStore';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api';
 
 /**
@@ -8,22 +9,22 @@ import apiClient from '../api';
  * @returns {React.ReactElement} MyInfoPage 컴포넌트
  */
 const MyInfoPage = () => {
-    const { user } = useAppStore();
+    const { user, deleteAccount } = useAppStore();
+    const navigate = useNavigate();
 
-    // 폼 상태와 API 통신 관련 상태들을 정의합니다.
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
-
-    // Snackbar 상태 정의 (메시지, 타입)
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
         severity: 'success' as 'success' | 'error' | 'info' | 'warning',
     });
 
-    // 페이지 로드 시, 서버에서 최신 사용자 정보를 가져오는 로직
+    const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     useEffect(() => {
         setIsLoading(true);
         apiClient.get('/user/info')
@@ -42,9 +43,8 @@ const MyInfoPage = () => {
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [user?.username]); // user.username이 바뀔 때 (로그인/로그아웃) 다시 불러오도록 설정
+    }, [user?.username]);
 
-    // 프로필 업데이트 버튼 클릭 시, 서버에 변경된 정보를 전송하는 로직
     const handleUpdateProfile = async () => {
         setIsUpdating(true);
         try {
@@ -84,13 +84,27 @@ const MyInfoPage = () => {
     };
 
     const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
-        if (reason === 'clickaway') {
-            return;
-        }
+        if (reason === 'clickaway') return;
         setSnackbar(prev => ({ ...prev, open: false }));
     };
 
-    // 로딩 중일 때 보여줄 UI
+    const handleOpenDeleteModal = () => setDeleteModalOpen(true);
+    const handleCloseDeleteModal = () => setDeleteModalOpen(false);
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            await deleteAccount();
+            handleCloseDeleteModal();
+            navigate('/agent', {state: { snackbar: { open: true, message: '회원 탈퇴가 정상적으로 처리되었습니다.', severity: 'success'}}});
+        } catch (error) {
+            console.error("회원 탈퇴 처리 중 오류 발생:", error);
+            setSnackbar({open: true, message: '회원 탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.', severity: 'error'});
+            setIsDeleting(false);
+            handleCloseDeleteModal();
+        }
+    }
+
     if (isLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -144,6 +158,20 @@ const MyInfoPage = () => {
                         </Button>
                     </Stack>
                 </Paper>
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, borderColor: 'error.light' }}>
+                    <Typography variant="h6" color="error.main" gutterBottom>회원 탈퇴</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        회원 탈퇴 시 계정과 관련된 모든 데이터(스페이스, 템플릿, 연락처 등)가 영구적으로 삭제되며, 이 작업은 되돌릴 수 없습니다.
+                    </Typography>
+                    <Button 
+                        variant="outlined" 
+                        color="error"
+                        onClick={handleOpenDeleteModal}
+                        disabled={isDeleting} // 탈퇴 진행 중 비활성화
+                    >
+                        회원 탈퇴
+                    </Button>
+                </Paper>
             </Stack>
 
             <Snackbar
@@ -156,6 +184,29 @@ const MyInfoPage = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <Dialog
+                open={isDeleteModalOpen}
+                onClose={handleCloseDeleteModal}
+                aria-labelledby="account-delete-dialog-title"
+                aria-describedby="account-delete-dialog-description"
+            >
+                <DialogTitle id="account-delete-dialog-title">
+                    정말로 회원을 탈퇴하시겠습니까?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="account-delete-dialog-description">
+                        이 작업은 되돌릴 수 없습니다. 계정과 관련된 모든 데이터가 영구적으로 삭제됩니다.
+                        정말로 진행하시려면 아래 '탈퇴' 버튼을 클릭해주세요.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDeleteModal} disabled={isDeleting}>취소</Button>
+                    <Button onClick={handleDeleteAccount} color="error" disabled={isDeleting}>
+                        {isDeleting ? <CircularProgress size={24} color="inherit" /> : '탈퇴'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
