@@ -27,7 +27,6 @@ interface StructuredTemplate {
     image_layout?: 'header' | 'background' | null;
 }
 
-// 수정된 타입 정의
 interface TemplateVariable {
     name: string;
     type: 'string' | 'number';
@@ -520,7 +519,6 @@ export default function SuggestionPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const effectRan = useRef(false);
-    const [showLoadingMessage, setShowLoadingMessage] = useState(false);
     const { currentSpace } = useAppStore();
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
     const [isConversationComplete, setIsConversationComplete] = useState(false);
@@ -528,7 +526,7 @@ export default function SuggestionPage() {
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [conversation]);
+    }, [conversation, isLoading]);
 
     useEffect(() => {
         if (effectRan.current === false && location.state?.userInput) {
@@ -542,112 +540,112 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
-        let isAutoCorrectionTriggered = false;
-
-        const loadingTimer = setTimeout(() => {
-            setShowLoadingMessage(true);
-        }, 1000);
+        setIsConversationComplete(false);
 
         try {
-            const res = await apiClient.post('/template/create-template', {
-                message,
-                state: currentState
+            const response = await fetch('api/template/sse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream',
+                },
+                body: JSON.stringify({
+                    message,
+                    state: currentState
+                }),
             });
 
-            const data = res.data;
-            if (!data.success) throw new Error(data.response || 'API에서 요청 처리에 실패했습니다.');
-
-            // 완료 메시지 확인
-            const completionMessage = "템플릿 생성을 마칩니다. 이용해주셔서 감사합니다!";
-            if ((data.message || data.response)?.includes(completionMessage)) {
-                setIsConversationComplete(true);
+            if (!response.ok) {
+                throw new Error(`서버 오류: ${response.statusText}`);
             }
 
-            let templatesForMessage: StructuredTemplate[] = [];
-
-            if (data.structured_templates && data.structured_templates.length > 0) {
-                templatesForMessage = data.structured_templates;
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('응답 스트림을 읽을 수 없습니다.');
             }
-            else if (data.structured_template) {
-                if (data.hasImage) {
-                    const baseTemplate = data.structured_template;
-                    const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
-                    templatesForMessage = [
-                        { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
-                        { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
-                    ];
-                } else {
-                    templatesForMessage = [data.structured_template];
+
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const jsonStr = line.substring(6);
+                        try {
+                            const streamData = JSON.parse(jsonStr);
+
+                            if (streamData.success) {
+                                let templatesForMessage: StructuredTemplate[] = [];
+                                if (streamData.structured_templates && streamData.structured_templates.length > 0) {
+                                    templatesForMessage = streamData.structured_templates;
+                                } else if (streamData.structured_template) {
+                                    if (streamData.hasImage) {
+                                        const baseTemplate = streamData.structured_template;
+                                        const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
+                                        templatesForMessage = [
+                                            { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
+                                            { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
+                                        ];
+                                    } else {
+                                        templatesForMessage = [streamData.structured_template];
+                                    }
+                                }
+
+                                const hasTemplates = templatesForMessage.length > 0;
+                                const finalBotMessage: BotResponse = {
+                                    id: Date.now() + 1,
+                                    type: 'bot',
+                                    content: streamData.response,
+                                    timestamp: getCurrentTime(),
+                                    templates: templatesForMessage,
+                                    options: streamData.options,
+                                    selected_template_id: hasTemplates ? 0 : null,
+                                    template: streamData.template,
+                                    structured_template: streamData.structured_template,
+                                    buttons: streamData.buttons,
+                                    hasImage: streamData.hasImage,
+                                    editable_variables: streamData.editable_variables,
+                                };
+
+                                setConversation(prev => [...prev, finalBotMessage]);
+                                setSessionState(streamData.state || {});
+
+                                if (hasTemplates) {
+                                    setLivePreviewTemplate(templatesForMessage[0]);
+                                }
+
+                                if (finalBotMessage.content?.includes("템플릿 생성을 마칩니다")) {
+                                    setIsConversationComplete(true);
+                                }
+                            }
+
+                        } catch (e) {
+                            console.error('스트림 데이터 파싱 오류:', e, '받은 데이터:', jsonStr);
+                        }
+                    }
                 }
             }
-
-            const hasTemplates = templatesForMessage.length > 0;
-            const newBotMessage: BotResponse = {
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+            const errorBotMessage: BotResponse = {
                 id: Date.now() + 1,
                 type: 'bot',
-                content: data.message || data.response,
+                content: `오류: ${errorMessage}`,
                 timestamp: getCurrentTime(),
-                templates: templatesForMessage,
-                options: data.options,
-                selected_template_id: hasTemplates ? 0 : null,
-                template: data.template,
-                structured_template: data.structured_template,
-                buttons: data.buttons,
-                hasImage: data.hasImage,
-                editable_variables: data.editable_variables,
             };
-
-            setConversation(prev => [...prev, newBotMessage]);
-
-            const newState = data.state || {};
-            setSessionState(newState);
-
-            if (hasTemplates) {
-                setLivePreviewTemplate(templatesForMessage[0]);
-            } else if (data.structured_template) {
-                setLivePreviewTemplate(data.structured_template);
-            } else {
-                const isConfirmation = newBotMessage.options && JSON.stringify(newBotMessage.options) === JSON.stringify(['예', '아니오']);
-                const isFeedback = newBotMessage.options && newBotMessage.options.includes('네, 수정할래요');
-                if (!isConfirmation && !isFeedback) setLivePreviewTemplate(null);
-            }
-
-            const autoCorrectionTriggerMessage = "AI가 자동으로 수정하겠습니다";
-            if (data.message && data.message.includes(autoCorrectionTriggerMessage)) {
-                isAutoCorrectionTriggered = true;
-                setTimeout(() => {
-                    callChatApi("(자동 수정 진행)", newState);
-                }, 1500);
-            }
-
-        } catch (error) {
-            let errorMessage = '알 수 없는 오류가 발생했습니다.';
-
-            if (apiClient.isAxiosError(error) && error.response) {
-                const errorData = error.response.data as ApiErrorData;
-                if (errorData.detail) {
-                    errorMessage = errorData.detail;
-                } else if (errorData.response) {
-                    errorMessage = errorData.response;
-                } else {
-                    errorMessage = error.message;
-                }
-            } else if (error instanceof Error) {
-                errorMessage = error.message;
-            }
-
-            setConversation(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: `오류: ${errorMessage}`, timestamp: getCurrentTime() } as BotResponse]);
+            setConversation(prev => [...prev, errorBotMessage]);
         } finally {
-            if (!isAutoCorrectionTriggered) {
-                setIsLoading(false);
-            }
-            clearTimeout(loadingTimer);
-            setShowLoadingMessage(false);
+            setIsLoading(false);
         }
-
     };
 
 
@@ -656,18 +654,17 @@ export default function SuggestionPage() {
         const userMessage = message;
         setInputValue('');
         setSelectedStyleOption(null);
-        setIsConversationComplete(false); // 새 대화 시작 시 초기화
 
         setConversation(prev => {
             const clearedConversation = prev.map(msg => ({
                 ...msg,
-                templates: undefined,
-                options: undefined
+                options: undefined,
+                isFinalized: msg.isFinalized || (msg.templates ? true : undefined),
             }));
 
             return [
                 ...clearedConversation,
-                { id: Date.now(), type: 'user', content: userMessage, timestamp: getCurrentTime() }
+                { id: Date.now(), type: 'user', content: userMessage, timestamp: getCurrentTime() } as BotResponse
             ];
         });
 
@@ -684,7 +681,7 @@ export default function SuggestionPage() {
         if (!message || message.selected_template_id === null || message.selected_template_id === undefined) return;
 
         if (isFinal) {
-            setConversation(prev => prev.map(msg => msg.id === messageId ? { ...msg, isFinalized: true } : msg));
+            setConversation(prev => prev.map(msg => msg.id === messageId ? { ...msg, isFinalized: true, options: undefined } : msg));
         } else {
             const messageToSend = `템플릿 ${message.selected_template_id + 1} 사용`;
             handleSendMessage(messageToSend);
@@ -793,14 +790,9 @@ export default function SuggestionPage() {
                                     </Box>
                                 </Box>
                             ))}
-                            {showLoadingMessage && (
-                                <Box sx={{
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    p: 2,
-                                    mb: 2,
-                                }}>
-                                    <style>{pulseAnimation}{shimmerAnimation}</style>
+                            {isLoading && (
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', mb: 2 }}>
+                                    <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>
                                     <Paper
                                         elevation={0}
                                         sx={{
@@ -816,10 +808,8 @@ export default function SuggestionPage() {
                                             border: 'none'
                                         }}
                                     >
-                                        <AutoAwesomeIcon sx={{
-                                            fontSize: 20,
-                                            animation: 'pulse 2s infinite ease-in-out'
-                                        }} />
+                                        <style>{pulseAnimation}{shimmerAnimation}</style>
+                                        <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
                                         <Typography
                                             variant="body2"
                                             sx={{
