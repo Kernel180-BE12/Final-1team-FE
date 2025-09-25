@@ -545,7 +545,9 @@ export default function SuggestionPage() {
         setIsConversationComplete(false);
 
         try {
-            const response = await fetch('/api/template/sse', {
+            const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
+
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
