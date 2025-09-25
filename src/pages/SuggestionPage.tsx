@@ -545,7 +545,7 @@ export default function SuggestionPage() {
         setIsConversationComplete(false);
 
         try {
-            const response = await fetch('api/template/sse', {
+            const response = await fetch('/api/template/sse', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
