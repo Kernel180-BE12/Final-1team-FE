@@ -557,6 +557,7 @@ export default function SuggestionPage() {
                     message,
                     state: currentState
                 }),
+                credentials: 'include'
             });
 
             if (!response.ok) {
