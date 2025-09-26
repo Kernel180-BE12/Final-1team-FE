@@ -32,9 +32,9 @@
       "source": "/api/:path*",
       "destination": "https://api.jober-1team.com/:path*"
     },
-    { 
-      "source": "/(.* )", 
-      "destination": "/index.html" 
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

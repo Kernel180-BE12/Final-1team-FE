@@ -11,7 +11,7 @@ const PrivateRoute = () => {
 
   // 만약 로그인 상태라면, 자식 페이지(<Outlet />)를 그대로 보여주고,
   // 아니라면 로그인 페이지로 보냅니다.
-  return isLoggedIn ? <Outlet /> : <Navigate to="/login" />;
+  return isLoggedIn ? <Outlet /> : <Navigate to="/agent" />;
 };
 
 export default PrivateRoute;
