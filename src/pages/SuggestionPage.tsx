@@ -586,7 +586,7 @@ export default function SuggestionPage() {
 
                 for (const line of lines) {
                     if (line.startsWith('data:')) {
-                        const jsonStr = line.substring(6);
+                        const jsonStr = line.substring(5);
                         try {
                             // 1. .data 접근 로직 제거: JSON 문자열을 객체로 바로 파싱
                             const streamData = JSON.parse(jsonStr);
