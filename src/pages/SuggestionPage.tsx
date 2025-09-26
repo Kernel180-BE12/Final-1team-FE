@@ -541,7 +541,7 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-
+    // --- ▼▼▼ 여기가 수정된 최종 callChatApi 함수입니다 ▼▼▼ ---
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
@@ -578,7 +578,10 @@ export default function SuggestionPage() {
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {
+                    setIsThinking(false); // 스트림이 완전히 종료되면 애니메이션을 끕니다.
+                    break;
+                }
 
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n\n');
@@ -591,50 +594,47 @@ export default function SuggestionPage() {
                             const streamData = JSON.parse(jsonStr);
 
                             if (streamData.success === false) {
-                                // AI가 생각 중일 때: 로딩 애니메이션을 켭니다.
-                                setIsThinking(true);
+                                setIsThinking(true); // AI가 생각 중일 때 애니메이션을 켭니다.
                             } else {
-                                // ★★★★★ 수정된 부분 ★★★★★
-                                // setTimeout을 사용해 "생각 중" 상태가 먼저 렌더링될 시간을 확보합니다.
-                                setTimeout(() => {
-                                    // 최종 응답 도착 시: 로딩 애니메이션을 끄고, 받은 데이터로 메시지를 채웁니다.
-                                    setIsThinking(false);
+                                // streamData.success가 true인 경우에도 isThinking을 끄지 않고,
+                                // 최종 응답이 오거나 스트림이 끝날 때까지 유지합니다.
+                                // 필요한 경우, streamData.response가 비어있지 않을 때만 isThinking을 false로 설정하는 로직을 추가할 수 있습니다.
 
-                                    if (streamData.state) {
-                                        setSessionState(streamData.state);
+                                if (streamData.state) {
+                                    setSessionState(streamData.state);
+                                }
+
+                                currentBotResponse.content = streamData.response;
+                                currentBotResponse.options = streamData.options;
+                                currentBotResponse.template = streamData.template;
+                                currentBotResponse.editable_variables = streamData.editable_variables;
+
+                                if (streamData.structured_templates && streamData.structured_templates.length > 0) {
+                                    currentBotResponse.templates = streamData.structured_templates;
+                                } else if (streamData.structured_template) {
+                                    if (streamData.hasImage) {
+                                        const baseTemplate = streamData.structured_template;
+                                        const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
+                                        currentBotResponse.templates = [
+                                            { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
+                                            { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
+                                        ];
+                                    } else {
+                                        currentBotResponse.templates = [streamData.structured_template];
                                     }
+                                }
 
-                                    currentBotResponse.content = streamData.response;
-                                    currentBotResponse.options = streamData.options;
-                                    currentBotResponse.template = streamData.template;
-                                    currentBotResponse.editable_variables = streamData.editable_variables;
+                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다" )) {
+                                    setIsConversationComplete(true);
+                                    setIsThinking(false); // 대화 완료 시점에 확실히 애니메이션을 끕니다.
+                                }
 
-                                    if (streamData.structured_templates && streamData.structured_templates.length > 0) {
-                                        currentBotResponse.templates = streamData.structured_templates;
-                                    } else if (streamData.structured_template) {
-                                        if (streamData.hasImage) {
-                                            const baseTemplate = streamData.structured_template;
-                                            const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
-                                            currentBotResponse.templates = [
-                                                { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
-                                                { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
-                                            ];
-                                        } else {
-                                            currentBotResponse.templates = [streamData.structured_template];
-                                        }
-                                    }
+                                setConversation(prev => [...prev, currentBotResponse]);
 
-                                    if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
-                                        setIsConversationComplete(true);
-                                    }
-
-                                    setConversation(prev => [...prev, currentBotResponse]);
-
-                                    if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
-                                        const selectedIndex = currentBotResponse.selected_template_id ?? 0;
-                                        setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
-                                    }
-                                }, 0); // 0ms 지연으로도 충분합니다.
+                                if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
+                                    const selectedIndex = currentBotResponse.selected_template_id ?? 0;
+                                    setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
+                                }
                             }
                         } catch (e) {
                             console.error('스트림 데이터 파싱 오류:', e, '받은 데이터:', jsonStr);
