@@ -541,6 +541,7 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
+    // --- ▼▼▼ 여기가 수정된 최종 callChatApi 함수입니다 ▼▼▼ ---
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
@@ -587,25 +588,20 @@ export default function SuggestionPage() {
                     if (line.startsWith('data: ')) {
                         const jsonStr = line.substring(6);
                         try {
-                            const streamdata = JSON.parse(jsonStr);
-                            const streamData = streamdata.data;
-                            console.log(streamData);
+                            // 1. .data 접근 로직 제거: JSON 문자열을 객체로 바로 파싱
+                            const streamData = JSON.parse(jsonStr);
 
                             if (streamData.success === false) {
+                                // AI가 생각 중일 때: 로딩 애니메이션을 켭니다.
                                 setIsThinking(true);
-                                console.log(streamData);
-
                             } else {
+                                // 최종 응답 도착 시: 로딩 애니메이션을 끄고, 받은 데이터로 메시지를 채웁니다.
                                 setIsThinking(false);
 
-
-                                // 1. sessionState를 올바르게 업데이트합니다.
                                 if (streamData.state) {
                                     setSessionState(streamData.state);
-                                    console.log(streamData.state);
                                 }
 
-                                // 2. 말풍선에 표시될 정보만 currentBotResponse에 담습니다.
                                 currentBotResponse.content = streamData.response;
                                 currentBotResponse.options = streamData.options;
                                 currentBotResponse.template = streamData.template;
@@ -613,8 +609,6 @@ export default function SuggestionPage() {
 
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
                                     currentBotResponse.templates = streamData.structured_templates;
-                                    console.log(streamData.structured_templates);
-                                    console.log(currentBotResponse.templates);
                                 } else if (streamData.structured_template) {
                                     if (streamData.hasImage) {
                                         const baseTemplate = streamData.structured_template;
@@ -638,7 +632,6 @@ export default function SuggestionPage() {
                                     const selectedIndex = currentBotResponse.selected_template_id ?? 0;
                                     setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
                                 }
-                                // --- ▲▲▲ 여기까지 수정된 부분입니다 ▲▲▲ ---
                             }
                         } catch (e) {
                             console.error('스트림 데이터 파싱 오류:', e, '받은 데이터:', jsonStr);
@@ -655,6 +648,7 @@ export default function SuggestionPage() {
             setIsThinking(false);
         }
     };
+    // --- ▲▲▲ 여기가 수정된 최종 callChatApi 함수입니다 ▲▲▲ ---
 
 
     const handleSendMessage = async (message: string) => {
@@ -700,6 +694,7 @@ export default function SuggestionPage() {
         setSelectedStyleOption(style);
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
+
 
     const handleSaveTemplate = async () => {
         if (!livePreviewTemplate) {
