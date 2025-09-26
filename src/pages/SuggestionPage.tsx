@@ -542,18 +542,22 @@ export default function SuggestionPage() {
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     // --- ▼▼▼ 여기가 수정된 최종 callChatApi 함수입니다 ▼▼▼ ---
-// --- ▼▼▼ 메시지 중복 문제를 해결한 최종 코드입니다 ▼▼▼ ---
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
-        setIsThinking(false);
+        setIsThinking(false); // 새 메시지 전송 시 초기화
 
-        // [핵심 1] 이번 대화에서 생성/업데이트할 메시지를 식별하기 위한 고유 ID
-        const streamingMessageId = Date.now();
+        const streamingMessageId = Date.now() + 1;
+
+        let currentBotResponse: BotResponse = {
+            id: streamingMessageId,
+            type: 'bot',
+            content: '',
+            timestamp: getCurrentTime(),
+        };
 
         try {
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
-            // ... fetch 로직은 동일 ...
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -571,7 +575,6 @@ export default function SuggestionPage() {
 
             const decoder = new TextDecoder();
             let buffer = '';
-            let finalResponseReceived = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -585,69 +588,49 @@ export default function SuggestionPage() {
                     if (line.startsWith('data:')) {
                         const jsonStr = line.substring(5);
                         try {
+                            // 1. .data 접근 로직 제거: JSON 문자열을 객체로 바로 파싱
                             const streamData = JSON.parse(jsonStr);
 
                             if (streamData.success === false) {
+                                // AI가 생각 중일 때: 로딩 애니메이션을 켭니다.
                                 setIsThinking(true);
-                                // [핵심 2] '생각 중'일 때, 앞으로 내용을 채워넣을 '빈 껍데기' 메시지를 **단 한 번만 추가**합니다.
-                                setConversation(prev => [
-                                    ...prev,
-                                    {
-                                        id: streamingMessageId, // 고유 ID를 부여
-                                        type: 'bot',
-                                        content: '',
-                                        timestamp: getCurrentTime(),
-                                    }
-                                ]);
                             } else {
-                                // [핵심 3] 최종 데이터가 오면, 새 메시지를 '추가'하는게 아니라
-                                // 위에서 만든 '빈 껍데기' 메시지를 찾아서 내용을 '업데이트'합니다.
+                                // 최종 응답 도착 시: 로딩 애니메이션을 끄고, 받은 데이터로 메시지를 채웁니다.
                                 setIsThinking(false);
-                                finalResponseReceived = true;
 
-                                const finalBotResponse: Partial<BotResponse> = { /* ... 데이터 채우기 ... */ };
-                                // ... (이전과 동일한 데이터 처리 로직)
-                                finalBotResponse.content = streamData.response;
-                                finalBotResponse.options = streamData.options;
-                                finalBotResponse.template = streamData.template;
-                                finalBotResponse.editable_variables = streamData.editable_variables;
+                                if (streamData.state) {
+                                    setSessionState(streamData.state);
+                                }
+
+                                currentBotResponse.content = streamData.response;
+                                currentBotResponse.options = streamData.options;
+                                currentBotResponse.template = streamData.template;
+                                currentBotResponse.editable_variables = streamData.editable_variables;
 
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
-                                    finalBotResponse.templates = streamData.structured_templates;
+                                    currentBotResponse.templates = streamData.structured_templates;
                                 } else if (streamData.structured_template) {
                                     if (streamData.hasImage) {
                                         const baseTemplate = streamData.structured_template;
                                         const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
-                                        finalBotResponse.templates = [
+                                        currentBotResponse.templates = [
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
                                         ];
                                     } else {
-                                        finalBotResponse.templates = [streamData.structured_template];
+                                        currentBotResponse.templates = [streamData.structured_template];
                                     }
                                 }
 
-                                if (finalBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
+                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
                                     setIsConversationComplete(true);
                                 }
 
-                                // ✨ 여기가 가장 중요합니다. map을 사용해 고유 ID가 일치하는 메시지를 찾아 내용만 교체합니다.
-                                // 서버에서 데이터를 10번 보내도, 이 로직은 절대 메시지를 추가하지 않고 기존 메시지를 10번 업데이트할 뿐입니다.
-                                setConversation(prev =>
-                                    prev.map(msg =>
-                                        msg.id === streamingMessageId
-                                            ? { ...msg, ...finalBotResponse }
-                                            : msg
-                                    )
-                                );
+                                setConversation(prev => [...prev, currentBotResponse]);
 
-                                if (finalBotResponse.templates && finalBotResponse.templates.length > 0) {
-                                    const selectedIndex = finalBotResponse.selected_template_id ?? 0;
-                                    setLivePreviewTemplate(finalBotResponse.templates[selectedIndex]);
-                                }
-
-                                if (streamData.state) {
-                                    setSessionState(streamData.state);
+                                if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
+                                    const selectedIndex = currentBotResponse.selected_template_id ?? 0;
+                                    setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
                                 }
                             }
                         } catch (e) {
@@ -656,21 +639,10 @@ export default function SuggestionPage() {
                     }
                 }
             }
-
-            if (!finalResponseReceived) {
-                setConversation(prev => prev.filter(msg => msg.id !== streamingMessageId));
-                throw new Error("서버로부터 최종 응답을 받지 못했습니다.");
-            }
-
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-            setConversation(prev =>
-                prev.map(msg =>
-                    msg.id === streamingMessageId
-                        ? { ...msg, content: `오류: ${errorMessage}` }
-                        : msg
-                ).filter(msg => msg.id === streamingMessageId ? msg.content : true)
-            );
+            currentBotResponse.content = `오류: ${errorMessage}`;
+            setConversation(prev => [...prev, currentBotResponse]);
         } finally {
             setIsLoading(false);
             setIsThinking(false);
