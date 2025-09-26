@@ -15,6 +15,7 @@ import PasswordResetPage from './pages/PasswordResetPage';
 import MyInfoPage from './pages/MyInfoPage';
 
 import useAppStore from './store/useAppStore';
+import GlobalSnackbar from './components/common/GlobalSnackbar';
 
 
 const RootRedirector = () => {
@@ -39,7 +40,7 @@ const RootHandler = () => {
     return <RootRedirector />;
   }
   
-  // 비로그인 상태이면, 회원가입 페이지로 보냅니다.
+  // 비로그인 상태이면, agent 페이지로 보냅니다.
   return <Navigate to="/agent" replace />;
 };
 
@@ -57,6 +58,7 @@ export default function App() {
         
         {/* 그룹 2: Private 구역 (로그인 후) */}
         <Route element={<PrivateRoute />}>
+          {/* 스페이스 관리 페이지를 위한 라우트 (DashboardLayout 사용) */}
           <Route path="/spaces" element={<DashboardLayout />}>
             <Route path="management" element={<SpacesPage />} />
             <Route index element={<Navigate to="management" replace />} />
@@ -79,6 +81,7 @@ export default function App() {
         {/* 길 잃은 사용자 처리 */}
         <Route path="*" element={<Navigate to="/agent" />} />
       </Routes>
+      <GlobalSnackbar />
     </BrowserRouter>
   );
 }

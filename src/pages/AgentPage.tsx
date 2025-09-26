@@ -87,10 +87,10 @@ const AgentPage = () => {
     // 이 컴포넌트가 화면에 나타났을 때,
     // 만약 로그인 상태라면, 스페이스 목록을 '반드시' 다시 불러옵니다.
     // 이렇게 하면 다른 곳에서 fetchSpaces 호출을 놓쳤더라도 여기서 확실히 실행됩니다.
-    if (isLoggedIn) {
+    if (isLoggedIn && spaces.length === 0) {
       fetchSpaces();
     }
-  }, [isLoggedIn, fetchSpaces]); // isLoggedIn 상태가 바뀔 때마다 재실행
+  }, [isLoggedIn, spaces.length, fetchSpaces]);
 
 
   const handleSend = () => {

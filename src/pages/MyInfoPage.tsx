@@ -47,7 +47,7 @@ const MyInfoPage = () => {
 
     const handleUpdateProfile = async () => {
         setIsUpdating(true);
-        try {
+       try {
             const response = await apiClient.put('/user/update', { name, email });
 
             if (response.status === 200) {
