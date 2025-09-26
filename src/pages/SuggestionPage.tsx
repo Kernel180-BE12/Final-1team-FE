@@ -589,17 +589,20 @@ export default function SuggestionPage() {
                         try {
                             const streamdata = JSON.parse(jsonStr);
                             const streamData = streamdata.data;
+                            console.log(streamData);
 
                             if (streamData.success === false) {
                                 setIsThinking(true);
+                                console.log(streamData);
+
                             } else {
                                 setIsThinking(false);
 
-                                // --- ▼▼▼ 여기가 수정된 부분입니다 ▼▼▼ ---
 
                                 // 1. sessionState를 올바르게 업데이트합니다.
                                 if (streamData.state) {
                                     setSessionState(streamData.state);
+                                    console.log(streamData.state);
                                 }
 
                                 // 2. 말풍선에 표시될 정보만 currentBotResponse에 담습니다.
@@ -610,6 +613,8 @@ export default function SuggestionPage() {
 
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
                                     currentBotResponse.templates = streamData.structured_templates;
+                                    console.log(streamData.structured_templates);
+                                    console.log(currentBotResponse.templates);
                                 } else if (streamData.structured_template) {
                                     if (streamData.hasImage) {
                                         const baseTemplate = streamData.structured_template;
