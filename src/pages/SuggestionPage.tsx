@@ -544,33 +544,35 @@ export default function SuggestionPage() {
         setIsLoading(true);
         setIsConversationComplete(false);
 
+        const streamingMessageId = Date.now() + 1;
+        const placeholderBotMessage: BotResponse = {
+            id: streamingMessageId,
+            type: 'bot',
+            content: '',
+            timestamp: getCurrentTime(),
+        };
+        setConversation(prev => [...prev, placeholderBotMessage]);
+
         try {
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
-
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'text/event-stream',
                 },
-                body: JSON.stringify({
-                    message,
-                    state: currentState
-                }),
+                body: JSON.stringify({ message, state: currentState }),
                 credentials: 'include'
             });
 
-            if (!response.ok) {
-                throw new Error(`서버 오류: ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`서버 오류: ${response.statusText}`);
 
             const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('응답 스트림을 읽을 수 없습니다.');
-            }
+            if (!reader) throw new Error('응답 스트림을 읽을 수 없습니다.');
 
             const decoder = new TextDecoder();
             let buffer = '';
+            let currentBotResponse: BotResponse = { ...placeholderBotMessage };
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -584,53 +586,49 @@ export default function SuggestionPage() {
                     if (line.startsWith('data: ')) {
                         const jsonStr = line.substring(6);
                         try {
+                            // ❗️ 서버 응답이 data 객체로 감싸여 있으므로 streamData.data로 접근합니다.
                             const streamData = JSON.parse(jsonStr);
 
-                            if (streamData.success) {
-                                let templatesForMessage: StructuredTemplate[] = [];
-                                if (streamData.structured_templates && streamData.structured_templates.length > 0) {
-                                    templatesForMessage = streamData.structured_templates;
-                                } else if (streamData.structured_template) {
-                                    if (streamData.hasImage) {
-                                        const baseTemplate = streamData.structured_template;
+                            if (streamData.data && streamData.data.success) {
+                                const responseData = streamData.data; // 편의를 위해 변수에 할당
+
+                                currentBotResponse.content += responseData.response || '';
+
+                                if (responseData.structured_templates) {
+                                    currentBotResponse.templates = responseData.structured_templates;
+                                } else if (responseData.structured_template) {
+                                    if (responseData.hasImage) {
+                                        const baseTemplate = responseData.structured_template;
                                         const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
-                                        templatesForMessage = [
+                                        currentBotResponse.templates = [
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
                                         ];
                                     } else {
-                                        templatesForMessage = [streamData.structured_template];
+                                        currentBotResponse.templates = [responseData.structured_template];
                                     }
                                 }
 
-                                const hasTemplates = templatesForMessage.length > 0;
-                                const finalBotMessage: BotResponse = {
-                                    id: Date.now() + 1,
-                                    type: 'bot',
-                                    content: streamData.response,
-                                    timestamp: getCurrentTime(),
-                                    templates: templatesForMessage,
-                                    options: streamData.options,
-                                    selected_template_id: hasTemplates ? 0 : null,
-                                    template: streamData.template,
-                                    structured_template: streamData.structured_template,
-                                    buttons: streamData.buttons,
-                                    hasImage: streamData.hasImage,
-                                    editable_variables: streamData.editable_variables,
-                                };
+                                if (responseData.options) currentBotResponse.options = responseData.options;
+                                if (responseData.template) currentBotResponse.template = responseData.template;
+                                if (responseData.editable_variables) currentBotResponse.editable_variables = responseData.editable_variables;
+                                if (responseData.state) setSessionState(responseData.state);
 
-                                setConversation(prev => [...prev, finalBotMessage]);
-                                setSessionState(streamData.state || {});
+                                setConversation(prev =>
+                                    prev.map(msg =>
+                                        msg.id === streamingMessageId ? { ...currentBotResponse } : msg
+                                    )
+                                );
 
-                                if (hasTemplates) {
-                                    setLivePreviewTemplate(templatesForMessage[0]);
+                                if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
+                                    const selectedIndex = currentBotResponse.selected_template_id ?? 0;
+                                    setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
                                 }
 
-                                if (finalBotMessage.content?.includes("템플릿 생성을 마칩니다")) {
+                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
                                     setIsConversationComplete(true);
                                 }
                             }
-
                         } catch (e) {
                             console.error('스트림 데이터 파싱 오류:', e, '받은 데이터:', jsonStr);
                         }
@@ -639,13 +637,11 @@ export default function SuggestionPage() {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-            const errorBotMessage: BotResponse = {
-                id: Date.now() + 1,
-                type: 'bot',
-                content: `오류: ${errorMessage}`,
-                timestamp: getCurrentTime(),
-            };
-            setConversation(prev => [...prev, errorBotMessage]);
+            setConversation(prev =>
+                prev.map(msg =>
+                    msg.id === streamingMessageId ? { ...msg, content: `오류: ${errorMessage}` } : msg
+                )
+            );
         } finally {
             setIsLoading(false);
         }
