@@ -587,7 +587,8 @@ export default function SuggestionPage() {
                     if (line.startsWith('data: ')) {
                         const jsonStr = line.substring(6);
                         try {
-                            const streamData = JSON.parse(jsonStr);
+                            const streamdata = JSON.parse(jsonStr);
+                            const streamData = streamdata.data;
 
                             if (streamData.success === false) {
                                 setIsThinking(true);
