@@ -541,20 +541,14 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-    // --- ▼▼▼ 여기가 수정된 최종 callChatApi 함수입니다 ▼▼▼ ---
+
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
-        setIsThinking(false); // 새 메시지 전송 시 초기화
+        setIsThinking(false);
 
-        const streamingMessageId = Date.now() + 1;
-
-        let currentBotResponse: BotResponse = {
-            id: streamingMessageId,
-            type: 'bot',
-            content: '',
-            timestamp: getCurrentTime(),
-        };
+        // 1. "생각 중" 상태와 최종 메시지를 관리할 고유 ID 생성
+        const streamingMessageId = Date.now();
 
         try {
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
@@ -575,6 +569,7 @@ export default function SuggestionPage() {
 
             const decoder = new TextDecoder();
             let buffer = '';
+            let finalResponseReceived = false; // 최종 응답 수신 여부 플래그
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -588,49 +583,66 @@ export default function SuggestionPage() {
                     if (line.startsWith('data:')) {
                         const jsonStr = line.substring(5);
                         try {
-                            // 1. .data 접근 로직 제거: JSON 문자열을 객체로 바로 파싱
                             const streamData = JSON.parse(jsonStr);
 
                             if (streamData.success === false) {
-                                // AI가 생각 중일 때: 로딩 애니메이션을 켭니다.
+                                // 2. "생각 중" 이벤트 수신 시: isThinking을 true로 설정하고 **즉시 빈 메시지를 렌더링**
                                 setIsThinking(true);
+                                setConversation(prev => [
+                                    ...prev,
+                                    {
+                                        id: streamingMessageId,
+                                        type: 'bot',
+                                        content: '', // 내용은 비워둡니다.
+                                        timestamp: getCurrentTime(),
+                                    }
+                                ]);
                             } else {
-                                // 최종 응답 도착 시: 로딩 애니메이션을 끄고, 받은 데이터로 메시지를 채웁니다.
+                                // 3. 최종 데이터 수신 시: isThinking을 false로 설정하고 **기존 임시 메시지를 최종 내용으로 업데이트**
                                 setIsThinking(false);
+                                finalResponseReceived = true; // 최종 응답을 받았다고 표시
 
-                                if (streamData.state) {
-                                    setSessionState(streamData.state);
-                                }
-
-                                currentBotResponse.content = streamData.response;
-                                currentBotResponse.options = streamData.options;
-                                currentBotResponse.template = streamData.template;
-                                currentBotResponse.editable_variables = streamData.editable_variables;
+                                const finalBotResponse: Partial<BotResponse> = {
+                                    content: streamData.response,
+                                    options: streamData.options,
+                                    template: streamData.template,
+                                    editable_variables: streamData.editable_variables,
+                                };
 
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
-                                    currentBotResponse.templates = streamData.structured_templates;
+                                    finalBotResponse.templates = streamData.structured_templates;
                                 } else if (streamData.structured_template) {
                                     if (streamData.hasImage) {
                                         const baseTemplate = streamData.structured_template;
                                         const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
-                                        currentBotResponse.templates = [
+                                        finalBotResponse.templates = [
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
                                         ];
                                     } else {
-                                        currentBotResponse.templates = [streamData.structured_template];
+                                        finalBotResponse.templates = [streamData.structured_template];
                                     }
                                 }
 
-                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
+                                if (finalBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
                                     setIsConversationComplete(true);
                                 }
 
-                                setConversation(prev => [...prev, currentBotResponse]);
+                                setConversation(prev =>
+                                    prev.map(msg =>
+                                        msg.id === streamingMessageId
+                                            ? { ...msg, ...finalBotResponse } // ID가 일치하는 메시지를 찾아 내용을 채웁니다.
+                                            : msg
+                                    )
+                                );
 
-                                if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
-                                    const selectedIndex = currentBotResponse.selected_template_id ?? 0;
-                                    setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
+                                if (finalBotResponse.templates && finalBotResponse.templates.length > 0) {
+                                    const selectedIndex = finalBotResponse.selected_template_id ?? 0;
+                                    setLivePreviewTemplate(finalBotResponse.templates[selectedIndex]);
+                                }
+
+                                if (streamData.state) {
+                                    setSessionState(streamData.state);
                                 }
                             }
                         } catch (e) {
@@ -639,16 +651,26 @@ export default function SuggestionPage() {
                     }
                 }
             }
+
+            if (!finalResponseReceived) {
+                setConversation(prev => prev.filter(msg => msg.id !== streamingMessageId));
+                throw new Error("서버로부터 최종 응답을 받지 못했습니다.");
+            }
+
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-            currentBotResponse.content = `오류: ${errorMessage}`;
-            setConversation(prev => [...prev, currentBotResponse]);
+            setConversation(prev =>
+                prev.map(msg =>
+                    msg.id === streamingMessageId
+                        ? { ...msg, content: `오류: ${errorMessage}` }
+                        : msg
+                ).filter(msg => msg.id === streamingMessageId ? msg.content : true)
+            );
         } finally {
             setIsLoading(false);
             setIsThinking(false);
         }
     };
-    // --- ▲▲▲ 여기가 수정된 최종 callChatApi 함수입니다 ▲▲▲ ---
 
 
     const handleSendMessage = async (message: string) => {
