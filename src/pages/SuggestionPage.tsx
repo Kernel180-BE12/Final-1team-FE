@@ -541,14 +541,14 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-    // --- ▼▼▼ 여기가 수정된 최종 callChatApi 함수입니다 ▼▼▼ ---
+    // --- 메인 UI 컴포넌트 --- 의 callChatApi 함수를 아래 코드로 교체하세요.
+
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
-        setIsThinking(false); // 새 메시지 전송 시 초기화
+        // setIsThinking(false); // << CHANGED: 여기서 미리 false로 설정하지 않습니다.
 
-        const streamingMessageId = Date.now() + 1;
-
+        const streamingMessageId = Date.now() + 1; // 스트리밍 메시지를 식별할 고유 ID
         let currentBotResponse: BotResponse = {
             id: streamingMessageId,
             type: 'bot',
@@ -575,11 +575,12 @@ export default function SuggestionPage() {
 
             const decoder = new TextDecoder();
             let buffer = '';
+            let thinkingStateTriggered = false; // << ADDED: 'thinking' 상태를 한 번만 트리거하기 위한 플래그
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
-                    setIsThinking(false); // 스트림이 완전히 종료되면 애니메이션을 끕니다.
+                    setIsThinking(false);
                     break;
                 }
 
@@ -594,20 +595,26 @@ export default function SuggestionPage() {
                             const streamData = JSON.parse(jsonStr);
 
                             if (streamData.success === false) {
-                                setIsThinking(true); // AI가 생각 중일 때 애니메이션을 켭니다.
+                                // <<-- LOGIC CHANGE START -->>
+                                if (!thinkingStateTriggered) {
+                                    setIsThinking(true);
+                                    thinkingStateTriggered = true;
+                                }
+                                // <<-- LOGIC CHANGE END -->>
                             } else {
-                                // streamData.success가 true인 경우에도 isThinking을 끄지 않고,
-                                // 최종 응답이 오거나 스트림이 끝날 때까지 유지합니다.
-                                // 필요한 경우, streamData.response가 비어있지 않을 때만 isThinking을 false로 설정하는 로직을 추가할 수 있습니다.
-
+                                // isThinking이 true인 상태에서 대화 내용 업데이트 시작
                                 if (streamData.state) {
                                     setSessionState(streamData.state);
                                 }
 
-                                currentBotResponse.content = streamData.response;
-                                currentBotResponse.options = streamData.options;
-                                currentBotResponse.template = streamData.template;
-                                currentBotResponse.editable_variables = streamData.editable_variables;
+                                // currentBotResponse 객체를 스트림 데이터로 업데이트
+                                currentBotResponse = {
+                                    ...currentBotResponse,
+                                    content: streamData.response,
+                                    options: streamData.options,
+                                    template: streamData.template,
+                                    editable_variables: streamData.editable_variables,
+                                };
 
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
                                     currentBotResponse.templates = streamData.structured_templates;
@@ -624,12 +631,24 @@ export default function SuggestionPage() {
                                     }
                                 }
 
-                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다" )) {
+                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
                                     setIsConversationComplete(true);
-                                    setIsThinking(false); // 대화 완료 시점에 확실히 애니메이션을 끕니다.
+                                    setIsThinking(false);
                                 }
 
-                                setConversation(prev => [...prev, currentBotResponse]);
+                                // <<-- CONVERSATION UPDATE LOGIC CHANGED -->>
+                                setConversation(prev => {
+                                    const existingMsgIndex = prev.findIndex(msg => msg.id === streamingMessageId);
+                                    if (existingMsgIndex !== -1) {
+                                        // 이미 메시지가 존재하면 해당 메시지를 업데이트
+                                        const newConversation = [...prev];
+                                        newConversation[existingMsgIndex] = currentBotResponse;
+                                        return newConversation;
+                                    } else {
+                                        // 메시지가 없으면 새로 추가
+                                        return [...prev, currentBotResponse];
+                                    }
+                                });
 
                                 if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
                                     const selectedIndex = currentBotResponse.selected_template_id ?? 0;
@@ -645,7 +664,17 @@ export default function SuggestionPage() {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
             currentBotResponse.content = `오류: ${errorMessage}`;
-            setConversation(prev => [...prev, currentBotResponse]);
+            // <<-- ERROR HANDLING UPDATE -->>
+            setConversation(prev => {
+                const existingMsgIndex = prev.findIndex(msg => msg.id === streamingMessageId);
+                if (existingMsgIndex !== -1) {
+                    const newConversation = [...prev];
+                    newConversation[existingMsgIndex] = currentBotResponse;
+                    return newConversation;
+                } else {
+                    return [...prev, currentBotResponse];
+                }
+            });
         } finally {
             setIsLoading(false);
             setIsThinking(false);
@@ -774,7 +803,6 @@ export default function SuggestionPage() {
                                     alignItems: 'center',
                                     zIndex: 10,
                                     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                                    backdropFilter: 'blur(4px)',
                                 }}>
                                     <Paper
                                         elevation={0}
