@@ -522,6 +522,7 @@ export default function SuggestionPage() {
     const { currentSpace } = useAppStore();
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
     const [isConversationComplete, setIsConversationComplete] = useState(false);
+    const [isThinking, setIsThinking] = useState(false);
 
 
     useEffect(() => {
@@ -529,7 +530,7 @@ export default function SuggestionPage() {
     }, [conversation, isLoading]);
 
     useEffect(() => {
-        if (effectRan.current === false && location.state?.userInput) {
+        if (!effectRan.current && location.state?.userInput) {
             const initialUserInput = location.state.userInput;
             handleSendMessage(initialUserInput);
             navigate('.', { replace: true, state: {} });
@@ -540,97 +541,120 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
+    // --- 메인 UI 컴포넌트 --- 의 callChatApi 함수를 아래 코드로 교체하세요.
+
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
+        // setIsThinking(false); // << CHANGED: 여기서 미리 false로 설정하지 않습니다.
+
+        const streamingMessageId = Date.now() + 1; // 스트리밍 메시지를 식별할 고유 ID
+        let currentBotResponse: BotResponse = {
+            id: streamingMessageId,
+            type: 'bot',
+            content: '',
+            timestamp: getCurrentTime(),
+        };
 
         try {
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
-
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'text/event-stream',
                 },
-                body: JSON.stringify({
-                    message,
-                    state: currentState
-                }),
+                body: JSON.stringify({ message, state: currentState }),
                 credentials: 'include'
             });
 
-            if (!response.ok) {
-                throw new Error(`서버 오류: ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`서버 오류: ${response.statusText}`);
 
             const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('응답 스트림을 읽을 수 없습니다.');
-            }
+            if (!reader) throw new Error('응답 스트림을 읽을 수 없습니다.');
 
             const decoder = new TextDecoder();
             let buffer = '';
+            let thinkingStateTriggered = false; // << ADDED: 'thinking' 상태를 한 번만 트리거하기 위한 플래그
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {
+                    setIsThinking(false);
+                    break;
+                }
 
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n\n');
                 buffer = lines.pop() || '';
 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.substring(6);
+                    if (line.startsWith('data:')) {
+                        const jsonStr = line.substring(5);
                         try {
                             const streamData = JSON.parse(jsonStr);
 
-                            if (streamData.success) {
-                                let templatesForMessage: StructuredTemplate[] = [];
+                            if (streamData.success === false) {
+                                // <<-- LOGIC CHANGE START -->>
+                                if (!thinkingStateTriggered) {
+                                    setIsThinking(true);
+                                    thinkingStateTriggered = true;
+                                }
+                                // <<-- LOGIC CHANGE END -->>
+                            } else {
+                                // isThinking이 true인 상태에서 대화 내용 업데이트 시작
+                                if (streamData.state) {
+                                    setSessionState(streamData.state);
+                                }
+
+                                // currentBotResponse 객체를 스트림 데이터로 업데이트
+                                currentBotResponse = {
+                                    ...currentBotResponse,
+                                    content: streamData.response,
+                                    options: streamData.options,
+                                    template: streamData.template,
+                                    editable_variables: streamData.editable_variables,
+                                };
+
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
-                                    templatesForMessage = streamData.structured_templates;
+                                    currentBotResponse.templates = streamData.structured_templates;
                                 } else if (streamData.structured_template) {
                                     if (streamData.hasImage) {
                                         const baseTemplate = streamData.structured_template;
                                         const placeholderUrl = 'https://placehold.co/1024x512/e2e8f0/475569?text=Image+Preview';
-                                        templatesForMessage = [
+                                        currentBotResponse.templates = [
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'header' },
                                             { ...baseTemplate, image_url: placeholderUrl, image_layout: 'background' }
                                         ];
                                     } else {
-                                        templatesForMessage = [streamData.structured_template];
+                                        currentBotResponse.templates = [streamData.structured_template];
                                     }
                                 }
 
-                                const hasTemplates = templatesForMessage.length > 0;
-                                const finalBotMessage: BotResponse = {
-                                    id: Date.now() + 1,
-                                    type: 'bot',
-                                    content: streamData.response,
-                                    timestamp: getCurrentTime(),
-                                    templates: templatesForMessage,
-                                    options: streamData.options,
-                                    selected_template_id: hasTemplates ? 0 : null,
-                                    template: streamData.template,
-                                    structured_template: streamData.structured_template,
-                                    buttons: streamData.buttons,
-                                    hasImage: streamData.hasImage,
-                                    editable_variables: streamData.editable_variables,
-                                };
-
-                                setConversation(prev => [...prev, finalBotMessage]);
-                                setSessionState(streamData.state || {});
-
-                                if (hasTemplates) {
-                                    setLivePreviewTemplate(templatesForMessage[0]);
+                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
+                                    setIsConversationComplete(true);
+                                    setIsThinking(false);
                                 }
 
-                                if (finalBotMessage.content?.includes("템플릿 생성을 마칩니다")) {
-                                    setIsConversationComplete(true);
+                                // <<-- CONVERSATION UPDATE LOGIC CHANGED -->>
+                                setConversation(prev => {
+                                    const existingMsgIndex = prev.findIndex(msg => msg.id === streamingMessageId);
+                                    if (existingMsgIndex !== -1) {
+                                        // 이미 메시지가 존재하면 해당 메시지를 업데이트
+                                        const newConversation = [...prev];
+                                        newConversation[existingMsgIndex] = currentBotResponse;
+                                        return newConversation;
+                                    } else {
+                                        // 메시지가 없으면 새로 추가
+                                        return [...prev, currentBotResponse];
+                                    }
+                                });
+
+                                if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
+                                    const selectedIndex = currentBotResponse.selected_template_id ?? 0;
+                                    setLivePreviewTemplate(currentBotResponse.templates[selectedIndex]);
                                 }
                             }
-
                         } catch (e) {
                             console.error('스트림 데이터 파싱 오류:', e, '받은 데이터:', jsonStr);
                         }
@@ -639,15 +663,21 @@ export default function SuggestionPage() {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-            const errorBotMessage: BotResponse = {
-                id: Date.now() + 1,
-                type: 'bot',
-                content: `오류: ${errorMessage}`,
-                timestamp: getCurrentTime(),
-            };
-            setConversation(prev => [...prev, errorBotMessage]);
+            currentBotResponse.content = `오류: ${errorMessage}`;
+            // <<-- ERROR HANDLING UPDATE -->>
+            setConversation(prev => {
+                const existingMsgIndex = prev.findIndex(msg => msg.id === streamingMessageId);
+                if (existingMsgIndex !== -1) {
+                    const newConversation = [...prev];
+                    newConversation[existingMsgIndex] = currentBotResponse;
+                    return newConversation;
+                } else {
+                    return [...prev, currentBotResponse];
+                }
+            });
         } finally {
             setIsLoading(false);
+            setIsThinking(false);
         }
     };
 
@@ -695,6 +725,7 @@ export default function SuggestionPage() {
         setSelectedStyleOption(style);
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
+
 
     const handleSaveTemplate = async () => {
         if (!livePreviewTemplate) {
@@ -760,8 +791,43 @@ export default function SuggestionPage() {
                             display: 'flex',
                             flexDirection: 'column',
                             '&::-webkit-scrollbar': { display: 'none' },
-                            scrollbarWidth: 'none'
+                            scrollbarWidth: 'none',
+                            position: 'relative'
                         }}>
+                            {isThinking && (
+                                <Box sx={{
+                                    position: 'absolute',
+                                    top: 0, left: 0, right: 0, bottom: 0,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    zIndex: 10,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                                }}>
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: '10px 16px', borderRadius: '16px', bgcolor: '#e2e8f0',
+                                            color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1.5,
+                                            boxShadow: 'none', backdropFilter: 'none', border: 'none'
+                                        }}
+                                    >
+                                        <style>{pulseAnimation}{shimmerAnimation}</style>
+                                        <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                fontWeight: 500,
+                                                background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
+                                                backgroundSize: '200% 100%', color: 'transparent',
+                                                backgroundClip: 'text', animation: 'shimmer 3s infinite linear',
+                                            }}
+                                        >
+                                            AI가 생각 중입니다...
+                                        </Typography>
+                                    </Paper>
+                                </Box>
+                            )}
                             {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => (
                                 <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
                                     {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
@@ -793,42 +859,6 @@ export default function SuggestionPage() {
                                     </Box>
                                 </Box>
                             ))}
-                            {isLoading && (
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', mb: 2 }}>
-                                    <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            p: '10px 16px',
-                                            borderRadius: '16px',
-                                            bgcolor: '#e2e8f0',
-                                            color: 'text.secondary',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1.5,
-                                            boxShadow: 'none',
-                                            backdropFilter: 'none',
-                                            border: 'none'
-                                        }}
-                                    >
-                                        <style>{pulseAnimation}{shimmerAnimation}</style>
-                                        <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                fontWeight: 500,
-                                                background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
-                                                backgroundSize: '200% 100%',
-                                                color: 'transparent',
-                                                backgroundClip: 'text',
-                                                animation: 'shimmer 3s infinite linear',
-                                            }}
-                                        >
-                                            AI가 생각 중입니다...
-                                        </Typography>
-                                    </Paper>
-                                </Box>
-                            )}
                             <div ref={chatEndRef} />
                         </Box>
                         <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>
