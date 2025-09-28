@@ -209,7 +209,8 @@ const actionsCreator: (
 
   saveTemplate: async (payload) => {
     await apiClient.post('/template/save', payload);
-    await get().fetchContacts();
+    // await get().fetchContacts();
+    await get().fetchTemplates();
   },
 
   fetchContacts: async () => {
