@@ -303,7 +303,7 @@ const IPhoneMockup = ({ children }: { children: React.ReactNode }) => (
         <Box sx={{ position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '30px', bgcolor: '#1c1c1e', borderRadius: '0 0 16px 16px', zIndex: 2 }} />
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#b2c7d9', overflow: 'hidden', minHeight: 0 }}>
             <Box sx={{ p: '4px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#000', zIndex: 1, height: '44px' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="24" height="24" viewBox="0 0 24" fill="currentColor">
                     <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"></path>
                 </svg>
                 <Box sx={{ display: 'flex', gap: '16px' }}>
@@ -522,8 +522,6 @@ export default function SuggestionPage() {
     const { currentSpace } = useAppStore();
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
     const [isConversationComplete, setIsConversationComplete] = useState(false);
-    const [isThinking, setIsThinking] = useState(false);
-
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -541,14 +539,11 @@ export default function SuggestionPage() {
 
     const getCurrentTime = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
-    // --- ▼▼▼ 여기가 수정된 최종 callChatApi 함수입니다 ▼▼▼ ---
     const callChatApi = async (message: string, currentState: object) => {
         setIsLoading(true);
         setIsConversationComplete(false);
-        setIsThinking(false); // 새 메시지 전송 시 초기화
 
         const streamingMessageId = Date.now() + 1;
-
         let currentBotResponse: BotResponse = {
             id: streamingMessageId,
             type: 'bot',
@@ -557,6 +552,7 @@ export default function SuggestionPage() {
         };
 
         try {
+            const localUrl = 'http://localhost:8000/api/chat/stream'
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -578,10 +574,7 @@ export default function SuggestionPage() {
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) {
-                    setIsThinking(false); // 스트림이 완전히 종료되면 애니메이션을 끕니다.
-                    break;
-                }
+                if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
                 const lines = buffer.split('\n\n');
@@ -594,20 +587,19 @@ export default function SuggestionPage() {
                             const streamData = JSON.parse(jsonStr);
 
                             if (streamData.success === false) {
-                                setIsThinking(true); // AI가 생각 중일 때 애니메이션을 켭니다.
+                                // 특별한 처리 없음
                             } else {
-                                // streamData.success가 true인 경우에도 isThinking을 끄지 않고,
-                                // 최종 응답이 오거나 스트림이 끝날 때까지 유지합니다.
-                                // 필요한 경우, streamData.response가 비어있지 않을 때만 isThinking을 false로 설정하는 로직을 추가할 수 있습니다.
-
                                 if (streamData.state) {
                                     setSessionState(streamData.state);
                                 }
 
-                                currentBotResponse.content = streamData.response;
-                                currentBotResponse.options = streamData.options;
-                                currentBotResponse.template = streamData.template;
-                                currentBotResponse.editable_variables = streamData.editable_variables;
+                                currentBotResponse = {
+                                    ...currentBotResponse,
+                                    content: streamData.response,
+                                    options: streamData.options,
+                                    template: streamData.template,
+                                    editable_variables: streamData.editable_variables,
+                                };
 
                                 if (streamData.structured_templates && streamData.structured_templates.length > 0) {
                                     currentBotResponse.templates = streamData.structured_templates;
@@ -624,12 +616,17 @@ export default function SuggestionPage() {
                                     }
                                 }
 
-                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다" )) {
+                                if (currentBotResponse.content?.includes("템플릿 생성을 마칩니다")) {
                                     setIsConversationComplete(true);
-                                    setIsThinking(false); // 대화 완료 시점에 확실히 애니메이션을 끕니다.
                                 }
 
-                                setConversation(prev => [...prev, currentBotResponse]);
+                                setConversation(prev => {
+                                    return prev.map(msg =>
+                                        msg.content === 'thinking'
+                                            ? { ...currentBotResponse, id: msg.id }
+                                            : msg
+                                    );
+                                });
 
                                 if (currentBotResponse.templates && currentBotResponse.templates.length > 0) {
                                     const selectedIndex = currentBotResponse.selected_template_id ?? 0;
@@ -644,20 +641,33 @@ export default function SuggestionPage() {
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
-            currentBotResponse.content = `오류: ${errorMessage}`;
-            setConversation(prev => [...prev, currentBotResponse]);
+            setConversation(prev => prev.map(msg =>
+                msg.content === 'thinking' ? { ...currentBotResponse, id: msg.id, content: `오류: ${errorMessage}` } : msg
+            ));
         } finally {
             setIsLoading(false);
-            setIsThinking(false);
         }
     };
-
 
     const handleSendMessage = async (message: string) => {
         if (!message.trim() || isLoading) return;
         const userMessage = message;
         setInputValue('');
         setSelectedStyleOption(null);
+
+        const timestamp = getCurrentTime();
+        const userMessageObject: BotResponse = {
+            id: Date.now(),
+            type: 'user',
+            content: userMessage,
+            timestamp: timestamp
+        };
+        const thinkingMessageObject: BotResponse = {
+            id: Date.now() + 1,
+            type: 'bot',
+            content: 'thinking',
+            timestamp: timestamp
+        };
 
         setConversation(prev => {
             const clearedConversation = prev.map(msg => ({
@@ -666,10 +676,7 @@ export default function SuggestionPage() {
                 isFinalized: msg.isFinalized || (msg.templates ? true : undefined),
             }));
 
-            return [
-                ...clearedConversation,
-                { id: Date.now(), type: 'user', content: userMessage, timestamp: getCurrentTime() } as BotResponse
-            ];
+            return [...clearedConversation, userMessageObject, thinkingMessageObject];
         });
 
         await callChatApi(userMessage, sessionState);
@@ -696,7 +703,6 @@ export default function SuggestionPage() {
         setSelectedStyleOption(style);
         setLivePreviewTemplate(STYLE_SKELETONS[style]);
     };
-
 
     const handleSaveTemplate = async () => {
         if (!livePreviewTemplate) {
@@ -750,7 +756,6 @@ export default function SuggestionPage() {
     return (
         <ThemeProvider theme={customTheme}>
             <Box sx={{ display: 'flex', gap: 3, height: '100%', minHeight: 0 }}>
-
                 {/* 1. 왼쪽 채팅창 섹션 */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
@@ -763,74 +768,71 @@ export default function SuggestionPage() {
                             flexDirection: 'column',
                             '&::-webkit-scrollbar': { display: 'none' },
                             scrollbarWidth: 'none',
-                            position: 'relative'
                         }}>
-                            {isThinking && (
-                                <Box sx={{
-                                    position: 'absolute',
-                                    top: 0, left: 0, right: 0, bottom: 0,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    zIndex: 10,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                                    backdropFilter: 'blur(4px)',
-                                }}>
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            p: '10px 16px', borderRadius: '16px', bgcolor: '#e2e8f0',
-                                            color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1.5,
-                                            boxShadow: 'none', backdropFilter: 'none', border: 'none'
-                                        }}
-                                    >
-                                        <style>{pulseAnimation}{shimmerAnimation}</style>
-                                        <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                fontWeight: 500,
-                                                background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
-                                                backgroundSize: '200% 100%', color: 'transparent',
-                                                backgroundClip: 'text', animation: 'shimmer 3s infinite linear',
-                                            }}
-                                        >
-                                            AI가 생각 중입니다...
-                                        </Typography>
-                                    </Paper>
-                                </Box>
-                            )}
-                            {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => (
-                                <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
-                                    {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
-                                    <Box sx={{ maxWidth: '80%', display: 'flex', flexDirection: 'column', alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
-                                        <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : '#e2e8f0', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)', backdropFilter: 'none', border: 'none' }}>
-                                            <Typography variant="body1">{msg.content}</Typography>
-                                        </Paper>
+                            {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => {
+                                // --- 여기가 핵심적인 변경 부분입니다 ---
+                                if (msg.content === 'thinking') {
+                                    return (
+                                        // 전체 너비를 사용하고 중앙 정렬합니다.
+                                        <Box key={msg.id} sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+                                            <Paper
+                                                elevation={0}
+                                                sx={{
+                                                    p: '10px 16px', borderRadius: '16px', bgcolor: '#e2e8f0',
+                                                    color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1.5,
+                                                    boxShadow: 'none', backdropFilter: 'none', border: 'none'
+                                                }}
+                                            >
+                                                <style>{pulseAnimation}{shimmerAnimation}</style>
+                                                <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        fontWeight: 500,
+                                                        background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
+                                                        backgroundSize: '200% 100%', color: 'transparent',
+                                                        backgroundClip: 'text', animation: 'shimmer 3s infinite linear',
+                                                    }}
+                                                >
+                                                    AI가 생각 중입니다...
+                                                </Typography>
+                                            </Paper>
+                                        </Box>
+                                    );
+                                }
 
-                                        {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && !(msg.options?.includes('네, 수정할래요')) && (
-                                            <TemplateSelector
-                                                msg={msg}
-                                                onTemplateSelect={handleTemplateSelect}
-                                                onConfirm={handleConfirmSelection}
-                                                onSendMessage={handleSendMessage}
-                                            />
-                                        )}
+                                return (
+                                    <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
+                                        {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
+                                        <Box sx={{ maxWidth: '80%', display: 'flex', flexDirection: 'column', alignItems: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
+                                            <Paper elevation={0} sx={{ p: '12px 16px', borderRadius: msg.type === 'user' ? '20px 20px 4px 20px' : '4px 20px 20px 20px', bgcolor: msg.type === 'user' ? 'primary.main' : '#e2e8f0', color: msg.type === 'user' ? 'white' : 'text.primary', whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)', backdropFilter: 'none', border: 'none' }}>
+                                                <Typography variant="body1">{msg.content}</Typography>
+                                            </Paper>
 
-                                        {msg.type === 'bot' && Array.isArray(msg.options) && msg.options.length > 0 &&
-                                            (!msg.templates || msg.templates.length < 3) && (
-                                                <OptionsPresenter
+                                            {msg.type === 'bot' && msg.templates && msg.templates.length > 0 && !(msg.options?.includes('네, 수정할래요')) && (
+                                                <TemplateSelector
                                                     msg={msg}
-                                                    onOptionSelect={handleSendMessage}
-                                                    selectedStyle={selectedStyleOption}
-                                                    onStyleSelect={handleStyleSelect}
+                                                    onTemplateSelect={handleTemplateSelect}
+                                                    onConfirm={handleConfirmSelection}
+                                                    onSendMessage={handleSendMessage}
                                                 />
                                             )}
 
-                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
+                                            {msg.type === 'bot' && Array.isArray(msg.options) && msg.options.length > 0 &&
+                                                (!msg.templates || msg.templates.length < 3) && (
+                                                    <OptionsPresenter
+                                                        msg={msg}
+                                                        onOptionSelect={handleSendMessage}
+                                                        selectedStyle={selectedStyleOption}
+                                                        onStyleSelect={handleStyleSelect}
+                                                    />
+                                                )}
+
+                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.secondary' }}>{msg.timestamp}</Typography>
+                                        </Box>
                                     </Box>
-                                </Box>
-                            ))}
+                                );
+                            })}
                             <div ref={chatEndRef} />
                         </Box>
                         <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.2)', bgcolor: 'rgba(255, 255, 255, 0.3)' }}>

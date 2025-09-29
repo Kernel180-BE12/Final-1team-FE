@@ -191,33 +191,37 @@ const RegisterModal = ({ open, onClose }: RegisterModalProps) => {
   return (
     <Modal open={open} onClose={onClose}>
       <Box sx={style}>
-        <Typography variant="h6" component="h2" sx={{ mb: 2, fontWeight: 'bold' }}>
-          회원가입
-        </Typography>
-        <Stack spacing={2}>
-          <TextField name="name" label="이름" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.name} helperText={errors.name} disabled={isLoading} />
-          <TextField name="username" label="아이디" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.username} helperText={errors.username} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.username ? <CircularProgress size={20} /> : null, }}}/>
-          <TextField name="email" label="이메일" type="email" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.email} helperText={errors.email} disabled={isLoading} slotProps={{ input: {endAdornment: isChecking.email ? <CircularProgress size={20} /> : null, }}}/>
-          <TextField name="password" label="비밀번호" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.password} helperText={errors.password} disabled={isLoading} />
-          <TextField name="passwordConfirm" label="비밀번호 확인" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.passwordConfirm} helperText={errors.passwordConfirm} disabled={isLoading} />          
-          {apiError && (
-            <Typography color="error" variant="body2" sx={{ textAlign: 'center' }}>
-                {apiError}
-            </Typography>
-          )}
+        <form onSubmit={(e) => {
+          e.preventDefault();  // 브라우저의 기본 GET 요청 동작을 막음
+          handleSubmit();  // 내가 만든 handleSubmit 동작 실행
+        }}>
+          <Typography variant="h6" component="h2" sx={{ mb: 2, fontWeight: 'bold' }}>
+            회원가입
+          </Typography>
+          <Stack spacing={2}>
+            <TextField name="name" label="이름" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.name} helperText={errors.name} disabled={isLoading} />
+            <TextField name="username" label="아이디" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.username} helperText={errors.username} disabled={isLoading} InputProps={{ endAdornment: isChecking.username ? <CircularProgress size={20} /> : null }}/>
+            <TextField name="email" label="이메일" type="email" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.email} helperText={errors.email} disabled={isLoading} InputProps={{ endAdornment: isChecking.email ? <CircularProgress size={20} /> : null }}/>
+            <TextField name="password" label="비밀번호" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.password} helperText={errors.password} disabled={isLoading} />
+            <TextField name="passwordConfirm" label="비밀번호 확인" type="password" fullWidth onChange={handleChange} onBlur={handleBlur} error={!!errors.passwordConfirm} helperText={errors.passwordConfirm} disabled={isLoading} />          
+            {apiError && (
+              <Typography color="error" variant="body2" sx={{ textAlign: 'center' }}>
+                  {apiError}
+              </Typography>
+            )}
 
-          <Button 
-            variant="contained" 
-            size="large" 
-            fullWidth 
-            onClick={handleSubmit}
-            onMouseDown={(e) => e.preventDefault()}
-            disabled={isLoading}
-            sx={{ height: 56 }}
-          >
-            {isLoading ? <CircularProgress size={24} color="inherit" /> : '가입하기'}
-          </Button>
-        </Stack>
+            <Button 
+              type="submit"
+              variant="contained" 
+              size="large" 
+              fullWidth 
+              disabled={isLoading}
+              sx={{ height: 56 }}
+            >
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : '가입하기'}
+            </Button>
+          </Stack>
+        </form>
       </Box>
     </Modal>
   );
