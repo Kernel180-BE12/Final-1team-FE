@@ -557,8 +557,9 @@ export default function SuggestionPage() {
         };
 
         try {
+            const localUrl = 'http://localhost:8000/api/chat/stream'
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
-            const response = await fetch(apiUrl, {
+            const response = await fetch(localUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -779,10 +780,43 @@ export default function SuggestionPage() {
     return (
         <ThemeProvider theme={customTheme}>
             <Box sx={{ display: 'flex', gap: 3, height: '100%', minHeight: 0 }}>
-
                 {/* 1. 왼쪽 채팅창 섹션 */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+                    <InteractiveCard sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto', position: 'relative'  }}>
+                        {isThinking && (
+                            <Box sx={{
+                                position: 'absolute',
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                zIndex: 10,
+                                // backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                            }}>
+                                <Paper
+                                    elevation={0}
+                                    sx={{
+                                        p: '10px 16px', borderRadius: '16px', bgcolor: '#e2e8f0',
+                                        color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1.5,
+                                        boxShadow: 'none', backdropFilter: 'none', border: 'none'
+                                    }}
+                                >
+                                    <style>{pulseAnimation}{shimmerAnimation}</style>
+                                    <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: 500,
+                                            background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
+                                            backgroundSize: '200% 100%', color: 'transparent',
+                                            backgroundClip: 'text', animation: 'shimmer 3s infinite linear',
+                                        }}
+                                    >
+                                        AI가 생각 중입니다...
+                                    </Typography>
+                                </Paper>
+                            </Box>
+                        )}
                         <Box sx={{
                             flex: 1,
                             p: 2,
@@ -792,42 +826,8 @@ export default function SuggestionPage() {
                             flexDirection: 'column',
                             '&::-webkit-scrollbar': { display: 'none' },
                             scrollbarWidth: 'none',
-                            position: 'relative'
+                            // position: 'relative'
                         }}>
-                            {isThinking && (
-                                <Box sx={{
-                                    position: 'absolute',
-                                    top: 0, left: 0, right: 0, bottom: 0,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    zIndex: 10,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                                }}>
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            p: '10px 16px', borderRadius: '16px', bgcolor: '#e2e8f0',
-                                            color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1.5,
-                                            boxShadow: 'none', backdropFilter: 'none', border: 'none'
-                                        }}
-                                    >
-                                        <style>{pulseAnimation}{shimmerAnimation}</style>
-                                        <AutoAwesomeIcon sx={{ fontSize: 20, animation: 'pulse 2s infinite ease-in-out' }} />
-                                        <Typography
-                                            variant="body2"
-                                            sx={{
-                                                fontWeight: 500,
-                                                background: (theme) => `linear-gradient(to right, ${theme.palette.text.secondary}, #fff, ${theme.palette.text.secondary})`,
-                                                backgroundSize: '200% 100%', color: 'transparent',
-                                                backgroundClip: 'text', animation: 'shimmer 3s infinite linear',
-                                            }}
-                                        >
-                                            AI가 생각 중입니다...
-                                        </Typography>
-                                    </Paper>
-                                </Box>
-                            )}
                             {conversation.length === 0 ? <EmptyChatPlaceholder onExampleClick={(text) => handleSendMessage(text)} /> : conversation.map(msg => (
                                 <Box key={msg.id} sx={{ mb: 2, display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
                                     {msg.type === 'bot' && <Avatar sx={{ mr: 1.5 }}><SmartToyOutlinedIcon /></Avatar>}
