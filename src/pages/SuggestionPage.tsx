@@ -554,7 +554,7 @@ export default function SuggestionPage() {
         try {
             const localUrl = 'http://localhost:8000/api/chat/stream'
             const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/template/sse`;
-            const response = await fetch(localUrl, {
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
