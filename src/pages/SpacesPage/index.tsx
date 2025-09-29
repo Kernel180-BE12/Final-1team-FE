@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Tab, Tabs, CircularProgress } from '@mui/material';
 import AllSpacesContent from './components/AllSpacesContent';
 import MembersContent from './components/MembersContent';
-import PermissionManagementContent from './components/PermissionManagementContent';
 import CreateSpaceModal from '../../components/modals/CreateSpaceModal';
 import useAppStore from '../../store/useAppStore';
 
@@ -62,7 +61,6 @@ const SpacesPage = () => {
           <Tabs value={currentTab} onChange={handleTabChange} aria-label="스페이스 관리 탭">
             <Tab label="전체 스페이스" value="all-spaces" />
             <Tab label="구성원" value="members" />
-            <Tab label="권한 관리" value="permissions" />
           </Tabs>
         </Box>
 
@@ -80,7 +78,6 @@ const SpacesPage = () => {
             )
           )}
           {currentTab === 'members' && <MembersContent />}
-          {currentTab === 'permissions' && <PermissionManagementContent />}
         </Box>
       </Box>
 
