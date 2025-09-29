@@ -13,6 +13,8 @@ import ContactsPage from './pages/ContactsPage';
 import SpacesPage from './pages/SpacesPage';
 import PasswordResetPage from './pages/PasswordResetPage';
 import MyInfoPage from './pages/MyInfoPage';
+// import AcceptInvitationPage from './pages/AcceptInvitationPage';
+import InvitationHandler from './pages/InvitationHandler';
 
 import useAppStore from './store/useAppStore';
 import GlobalSnackbar from './components/common/GlobalSnackbar';
@@ -30,35 +32,30 @@ const RootRedirector = () => {
   return <Navigate to="/spaces/management" replace />;
 };
 
-// 루트 경로('/')를 처리할 핸들러 컴포넌트
-// 이 컴포넌트가 로그인/비로그인 상태에 따라 올바른 경로로 안내합니다.
-const RootHandler = () => {
-  const { isLoggedIn } = useAppStore();
-
-  // 로그인 상태이면, 기존 로직을 따라 알맞은 스페이스로 보냅니다.
-  if (isLoggedIn) {
-    return <RootRedirector />;
-  }
-  
-  // 비로그인 상태이면, agent 페이지로 보냅니다.
-  return <Navigate to="/agent" replace />;
-};
-
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RootHandler />} />
-
-        {/* 그룹 1: Public 구역 (로그인 전) */}
+        {/* 그룹 1: 공개(Public) 경로 그룹 */}
+        {/* 이 그룹은 로그인이 필요 없는 모든 페이지를 포함합니다. */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/reset-password" element={<PasswordResetPage />} />
+        <Route path="/invite-member" element={<InvitationHandler />} />
+        
+        {/* PublicLayout을 사용하는 Agent 페이지 */}
+        {/* 사용자가 처음 만나는 홈 화면 역할을 합니다. */}
         <Route element={<PublicLayout />}>
           <Route path="/agent" element={<AgentPage />} />
         </Route>
         
-        {/* 그룹 2: Private 구역 (로그인 후) */}
+        {/* 그룹 2: 비공개(Private) 경로 그룹 */}
+        {/* 이 그룹의 모든 페이지는 로그인이 필요합니다. */}
         <Route element={<PrivateRoute />}>
-          {/* 스페이스 관리 페이지를 위한 라우트 (DashboardLayout 사용) */}
+          {/* 로그인 후 루트 경로('/')로 오면 알맞은 스페이스로 보내줍니다. */}
+          <Route path="/" element={<RootRedirector />} />
+
           <Route path="/spaces" element={<DashboardLayout />}>
             <Route path="management" element={<SpacesPage />} />
             <Route index element={<Navigate to="management" replace />} />
@@ -73,15 +70,11 @@ export default function App() {
           </Route>
         </Route>       
         
-        {/* 그룹 3: 독립된 페이지 */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/reset-password" element={<PasswordResetPage />} />
-
-        {/* 길 잃은 사용자 처리 */}
+        {/* 길 잃은 사용자 처리: 위에서 일치하는 경로가 하나도 없을 때만 동작합니다. */}
         <Route path="*" element={<Navigate to="/agent" />} />
       </Routes>
       <GlobalSnackbar />
     </BrowserRouter>
   );
 }
+
