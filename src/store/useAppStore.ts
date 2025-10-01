@@ -56,6 +56,21 @@
 //   tag: string;
 // }
 
+// export interface SpaceMember {
+//   id: number;       // memberId
+//   authority: 'ADMIN' | 'MEMBER';
+//   tag: string;
+//   userId: number;
+//   // TODO: 백엔드 API 응답에 email, username 등이 추가되면 여기에 필드를 더 정의해야 합니다.
+// }
+
+// export interface NewMemberInvitation {
+//   authority: 'ADMIN' | 'MEMBER';
+//   email: string;
+//   tag: string;
+// }
+
+
 // // --- 상태(State)와 액션(Actions) 타입 분리 ---
 // interface MyState {
 //   isLoggedIn: boolean;
@@ -66,9 +81,11 @@
 //   sortedSpaces: Space[];
 //   templates: Template[];
 //   isLoadingTemplates: boolean;
+//   contacts: Contact[];
 //   isLoadingContacts: boolean;
 //   isSpacesInitialized: boolean;
-//   contacts: Contact[];
+//   spaceMembers: SpaceMember[];
+//   isLoadingSpaceMembers: boolean;
 //   allTags: string[]; 
 //   selectedTags: string[];
 //   filteredContacts: Contact[];
@@ -86,6 +103,7 @@
 //   logout: () => Promise<void>;
 //   setCurrentSpace: (space: Space | null) => void;
 //   fetchSpaces: () => Promise<void>;
+//   createSpace: (payload: { spaceName: string; ownerName: string }) => Promise<Space>;
 //   fetchTemplates: () => Promise<void>;
 //   saveTemplate: (payload: TemplatePayload) => Promise<void>;
 //   fetchContacts: () => Promise<void>;
@@ -93,6 +111,10 @@
 //   updateContact: (contactToUpdate: Contact) => Promise<void>;
 //   deleteContact: (id: number) => Promise<void>;
 //   deleteSelectedContacts: () => Promise<void>;
+//   fetchSpaceMembers: () => Promise<void>;
+//   inviteSpaceMembers: (invitations: NewMemberInvitation[]) => Promise<{ successEmails: string[], duplicateEmails: string[] }>;
+//   updateSpaceMember: (memberId: number, data: { authority: 'ADMIN' | 'MEMBER'; tag: string }) => Promise<void>;
+//   deleteSpaceMember: (memberId: number) => Promise<void>;
 //   toggleTagFilter: (tag: string) => void;
 //   clearTagFilter: () => void;
 //   toggleContactSelection: (id: number) => void;
@@ -118,6 +140,8 @@
 //   contacts: [],
 //   isLoadingContacts: false,
 //   isSpacesInitialized: false,
+//   spaceMembers: [],
+//   isLoadingSpaceMembers: false,
 //   allTags: [],
 //   selectedTags: [],
 //   filteredContacts: [],
@@ -137,7 +161,14 @@
 //     } catch (error) {
 //       console.error('로그아웃 API 호출 실패:', error);
 //     } finally {
-//       set(stateCreator()); // 모든 상태를 초기 상태로 리셋
+//       const initialState = stateCreator();
+//       const persistedState = get();
+//       set({
+//         ...initialState,
+//         isLoggedIn: false,
+//         user: null,
+//         currentSpace: persistedState.currentSpace,
+//       });
 //     }
 //   },
 
@@ -151,6 +182,7 @@
 //         selectedTags: [],
 //         filteredContacts: [],
 //         selectedContactIds: [],
+//         spaceMembers: [],
 //       });
 //     }
 //   },
@@ -180,12 +212,16 @@
 //       set({ spaces: spacesWithColor, sortedSpaces: sorted, currentSpace: newCurrentSpace });
 //     } catch (error) {
 //       console.error('스페이스 목록을 불러오는 데 실패했습니다:', error);
-//       set({ apiError: '데이터를 불러오는 데 실패했습니다. 잠시 후 다시 시도해주세요.' });
+//       set({ apiError: '데이터를 불러오는 데 실패했습니다.' });
 //     } finally {
 //       set({ isLoading: false, isSpacesInitialized: true });
 //     }
 //   },
-
+//   createSpace: async (payload) => {
+//     const response = await apiClient.post<Space>('/spaces', payload);
+//     await get().fetchSpaces();
+//     return response.data;
+//   },
 //   fetchTemplates: async () => {
 //     const currentSpaceId = get().currentSpace?.spaceId;
 //     if (!currentSpaceId) return set({ templates: [] });
@@ -209,7 +245,6 @@
 
 //   saveTemplate: async (payload) => {
 //     await apiClient.post('/template/save', payload);
-//     // await get().fetchContacts();
 //     await get().fetchTemplates();
 //   },
 
@@ -220,7 +255,7 @@
 //     set({ isLoadingContacts: true });
 //     try {
 //       const response = await apiClient.get<{ contacts: Contact[] }>(`/space/contact/${currentSpaceId}`);
-//       const fetchedContacts = response.data.contacts || [];
+//       const fetchedContacts = response.data.contacts.map(c => ({...c, id: c.id }) ) || [];
 //       const allTags = [...new Set(fetchedContacts.map(c => c.tag).filter(Boolean))].sort();
       
 //       const currentSelectedTags = get().selectedTags;
@@ -269,7 +304,12 @@
 //     try {
 //       const currentSpaceId = get().currentSpace?.spaceId;
 //       if (!currentSpaceId) throw new Error("스페이스가 선택되지 않았습니다.");
-//       await apiClient.delete('/space/contact', { data: { spaceId: currentSpaceId, id } });
+//       await apiClient.delete('/space/contact', { 
+//         data: { 
+//           spaceId: currentSpaceId, 
+//           ids: [id] 
+//         } 
+//       });
 //       await get().fetchContacts();
 //       get().showSnackbar({ message: '연락처를 삭제했습니다.', severity: 'success' });
 //     } catch (error) {
@@ -294,6 +334,74 @@
 //     }
 //   },
 
+//   // ★ 5. 스페이스 멤버 관리 액션 구현
+//   fetchSpaceMembers: async () => {
+//     const currentSpaceId = get().currentSpace?.spaceId;
+//     if (!currentSpaceId) return set({ spaceMembers: [] });
+
+//     set({ isLoadingSpaceMembers: true });
+//     try {
+//       const response = await apiClient.get<SpaceMember[]>(`/space-members/${currentSpaceId}/members`);
+//       set({ spaceMembers: response.data || [] });
+//     } catch (error) {
+//       console.error("스페이스 멤버 조회 실패:", error);
+//       get().showSnackbar({ message: '멤버 목록을 불러오는 데 실패했습니다.', severity: 'error' });
+//       set({ spaceMembers: [] });
+//     } finally {
+//       set({ isLoadingSpaceMembers: false });
+//     }
+//   },
+
+//   inviteSpaceMembers: async (invitations) => {
+//     const currentSpaceId = get().currentSpace?.spaceId;
+//     if (!currentSpaceId) throw new Error("스페이스가 선택되지 않았습니다.");
+
+//     try {
+//       const response = await apiClient.post(`/space-members/${currentSpaceId}/invitations`, invitations);
+//       get().showSnackbar({ message: '초대 메일을 발송했습니다.', severity: 'success' });
+//       await get().fetchSpaceMembers();
+//       return response.data; // { successEmails, duplicateEmails } 반환
+//     } catch(error) {
+//       console.error("멤버 초대 실패:", error);
+//       get().showSnackbar({ message: '멤버 초대에 실패했습니다.', severity: 'error' });
+//       throw error;
+//     }
+//   },
+
+//   updateSpaceMember: async (memberId, data) => {
+//     const currentSpaceId = get().currentSpace?.spaceId;
+//     if (!currentSpaceId) throw new Error("스페이스가 선택되지 않았습니다.");
+    
+//     try {
+//       await apiClient.patch(`/space-members/${memberId}`, data, {
+//         params: { spaceId: currentSpaceId } // spaceId를 쿼리 파라미터로 전달
+//       });
+//       get().showSnackbar({ message: '멤버 정보가 수정되었습니다.', severity: 'success' });
+//       await get().fetchSpaceMembers();
+//     } catch(error) {
+//       console.error("멤버 정보 수정 실패:", error);
+//       get().showSnackbar({ message: '멤버 정보 수정에 실패했습니다.', severity: 'error' });
+//       throw error;
+//     }
+//   },
+
+//   deleteSpaceMember: async (memberId) => {
+//     const currentSpaceId = get().currentSpace?.spaceId;
+//     if (!currentSpaceId) throw new Error("스페이스가 선택되지 않았습니다.");
+
+//     try {
+//       await apiClient.delete(`/space-members/${memberId}`, {
+//         params: { spaceId: currentSpaceId } // spaceId를 쿼리 파라미터로 전달
+//       });
+//       get().showSnackbar({ message: '멤버를 삭제했습니다.', severity: 'success' });
+//       await get().fetchSpaceMembers();
+//     } catch(error) {
+//       console.error("멤버 삭제 실패:", error);
+//       get().showSnackbar({ message: '멤버 삭제에 실패했습니다.', severity: 'error' });
+//       throw error;
+//     }
+//   },
+
 //   deleteAccount: async () => {
 //     await apiClient.delete('/user/delete');
 //     await get().logout();
@@ -301,9 +409,7 @@
 
 //   toggleTagFilter: (tag) => {
 //     const currentSelected = get().selectedTags;
-//     const newSelected = currentSelected.includes(tag)
-//       ? currentSelected.filter(t => t !== tag)
-//       : [...currentSelected, tag];
+//     const newSelected = currentSelected.includes(tag) ? currentSelected.filter(t => t !== tag) : [...currentSelected, tag];
 //     const allContacts = get().contacts;
 //     const filtered = newSelected.length > 0 ? allContacts.filter(c => newSelected.includes(c.tag)) : allContacts;
 //     set({ selectedTags: newSelected, filteredContacts: filtered, selectedContactIds: [] });
@@ -342,7 +448,6 @@
 //     }),
 //     { 
 //       name: 'app-storage',
-//       // persist a subset of the state
 //       partialize: (state) => ({
 //         isLoggedIn: state.isLoggedIn,
 //         user: state.user,
@@ -413,12 +518,14 @@ export interface NewContactPayload {
   tag: string;
 }
 
+// ★ 1. 스페이스 멤버 타입 업데이트
 export interface SpaceMember {
-  id: number;       // memberId
+  id: number; // memberId
+  name: string; // 이름 추가
+  email: string; // 이메일 추가
   authority: 'ADMIN' | 'MEMBER';
   tag: string;
-  userId: number;
-  // TODO: 백엔드 API 응답에 email, username 등이 추가되면 여기에 필드를 더 정의해야 합니다.
+  // userId는 더 이상 사용되지 않으므로 제거합니다.
 }
 
 export interface NewMemberInvitation {
@@ -438,9 +545,9 @@ interface MyState {
   sortedSpaces: Space[];
   templates: Template[];
   isLoadingTemplates: boolean;
-  contacts: Contact[];
   isLoadingContacts: boolean;
   isSpacesInitialized: boolean;
+  contacts: Contact[];
   spaceMembers: SpaceMember[];
   isLoadingSpaceMembers: boolean;
   allTags: string[]; 
@@ -612,7 +719,7 @@ const actionsCreator: (
     set({ isLoadingContacts: true });
     try {
       const response = await apiClient.get<{ contacts: Contact[] }>(`/space/contact/${currentSpaceId}`);
-      const fetchedContacts = response.data.contacts.map(c => ({...c, id: c.id }) ) || [];
+      const fetchedContacts = response.data.contacts.map(c => ({...c, id: c.id /* contactId */}) ) || [];
       const allTags = [...new Set(fetchedContacts.map(c => c.tag).filter(Boolean))].sort();
       
       const currentSelectedTags = get().selectedTags;
@@ -690,14 +797,14 @@ const actionsCreator: (
       throw error;
     }
   },
-
-  // ★ 5. 스페이스 멤버 관리 액션 구현
+  
   fetchSpaceMembers: async () => {
     const currentSpaceId = get().currentSpace?.spaceId;
     if (!currentSpaceId) return set({ spaceMembers: [] });
 
     set({ isLoadingSpaceMembers: true });
     try {
+      // ★ 2. API 응답 타입이 SpaceMember[]로 변경되었습니다.
       const response = await apiClient.get<SpaceMember[]>(`/space-members/${currentSpaceId}/members`);
       set({ spaceMembers: response.data || [] });
     } catch (error) {
@@ -717,7 +824,7 @@ const actionsCreator: (
       const response = await apiClient.post(`/space-members/${currentSpaceId}/invitations`, invitations);
       get().showSnackbar({ message: '초대 메일을 발송했습니다.', severity: 'success' });
       await get().fetchSpaceMembers();
-      return response.data; // { successEmails, duplicateEmails } 반환
+      return response.data;
     } catch(error) {
       console.error("멤버 초대 실패:", error);
       get().showSnackbar({ message: '멤버 초대에 실패했습니다.', severity: 'error' });
@@ -731,7 +838,7 @@ const actionsCreator: (
     
     try {
       await apiClient.patch(`/space-members/${memberId}`, data, {
-        params: { spaceId: currentSpaceId } // spaceId를 쿼리 파라미터로 전달
+        params: { spaceId: currentSpaceId }
       });
       get().showSnackbar({ message: '멤버 정보가 수정되었습니다.', severity: 'success' });
       await get().fetchSpaceMembers();
@@ -748,7 +855,7 @@ const actionsCreator: (
 
     try {
       await apiClient.delete(`/space-members/${memberId}`, {
-        params: { spaceId: currentSpaceId } // spaceId를 쿼리 파라미터로 전달
+        params: { spaceId: currentSpaceId }
       });
       get().showSnackbar({ message: '멤버를 삭제했습니다.', severity: 'success' });
       await get().fetchSpaceMembers();

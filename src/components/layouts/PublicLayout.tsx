@@ -71,7 +71,7 @@ const PublicLayout = () => {
                 sx={{ flexGrow: 1, cursor: 'pointer' }}
                 onClick={() => navigate('/')}
             >
-                AI 템플릿 만들기
+                Jober
             </Typography>
             {isLoggedIn ? (
             <>

@@ -78,7 +78,7 @@ const RegisterPage = () => {
                 >
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         <Typography variant='h4' component="h1" align="center" sx={{ fontWeight: 'bold' }} onClick={() => navigate('/agent')} >
-                            AI 템플릿 만들기
+                            Jober
                         </Typography>
                         
                         <Typography variant="h5" sx={{ fontWeight: 'medium', mb: 2 }}>
