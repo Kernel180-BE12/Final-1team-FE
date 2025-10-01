@@ -4,13 +4,14 @@ import {
   TableContainer, TableHead, TableRow, CircularProgress, IconButton,
   Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, Select, FormControl, InputLabel,
-  Alert, Chip, Stack, InputAdornment
+  Alert, Chip, Stack, InputAdornment, Avatar
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search'; // 검색 아이콘 추가
+import SearchIcon from '@mui/icons-material/Search';
+import PersonIcon from '@mui/icons-material/Person'; // 멤버 아이콘 추가
 import useAppStore from '../../../store/useAppStore';
 import type { SpaceMember, NewMemberInvitation } from '../../../store/useAppStore';
 
@@ -139,7 +140,8 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ open, onClose, member
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
             <DialogTitle fontWeight="bold">멤버 정보 수정</DialogTitle>
             <DialogContent>
-                <Typography variant="subtitle1" sx={{mb: 2}}>사용자 아이디: {member?.userId}</Typography>
+                {/* ★ 이제 사용자 ID 대신 이름과 이메일을 보여줍니다. */}
+                <Typography variant="subtitle1" sx={{mb: 2}}>멤버: {member?.name} ({member?.email})</Typography>
                 <FormControl fullWidth margin="normal">
                     <InputLabel>권한</InputLabel>
                     <Select native value={authority} onChange={(e) => setAuthority(e.target.value as 'ADMIN' | 'MEMBER')} label="권한">
@@ -174,9 +176,8 @@ const MembersContent = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedMember, setSelectedMember] = useState<SpaceMember | null>(null);
-  const [searchTerm, setSearchTerm] = useState(''); // ★ 검색어 상태 추가
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // ★ 현재 로그인한 유저가 ADMIN인지 확인하는 변수
   const isCurrentUserAdmin = currentSpace?.authority === 'ADMIN';
 
   useEffect(() => {
@@ -196,7 +197,8 @@ const MembersContent = () => {
   };
   
   const handleDelete = () => {
-    if (selectedMember && window.confirm(`정말로 이 멤버를 삭제하시겠습니까?`)) {
+    // ★ 삭제 확인 창에 사용자 이름을 표시합니다.
+    if (selectedMember && window.confirm(`'${selectedMember.name}' 멤버를 정말로 삭제하시겠습니까?`)) {
         deleteSpaceMember(selectedMember.id);
     }
     handleMenuClose();
@@ -207,13 +209,16 @@ const MembersContent = () => {
     handleMenuClose();
   }
 
-  // ★ 검색어에 따라 멤버 목록을 필터링하는 로직
+  // ★ 검색 로직 업데이트: 이름, 이메일, 태그로 검색
   const filteredMembers = spaceMembers.filter(member => {
+    if (!member) return false;
     const searchTermLower = searchTerm.toLowerCase();
-    // TODO: API가 멤버 이름/이메일을 반환하면 검색 조건에 추가해야 합니다.
-    const userIdMatch = member.userId.toString().includes(searchTermLower);
+    
+    const nameMatch = member.name?.toLowerCase().includes(searchTermLower);
+    const emailMatch = member.email?.toLowerCase().includes(searchTermLower);
     const tagMatch = member.tag?.toLowerCase().includes(searchTermLower);
-    return userIdMatch || tagMatch;
+
+    return nameMatch || emailMatch || tagMatch;
   });
 
   if (isLoadingSpaceMembers) {
@@ -222,39 +227,40 @@ const MembersContent = () => {
 
   return (
     <Box>
-      {/* 2. 검색창과 초대 버튼을 한 줄에 배치 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
-        <TextField
-          fullWidth
-          placeholder="사용자 ID 또는 태그로 검색..."
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-              startAdornment: (
-              <InputAdornment position="start">
-                  <SearchIcon />
-              </InputAdornment>
-              ),
-          }}
-        />
-
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />} 
-          onClick={() => setInviteModalOpen(true)}
-          disabled={!isCurrentUserAdmin}
-          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }} // 버튼이 줄어들거나 글자가 줄바꿈되지 않도록 설정
-        >
-          멤버 초대
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <TextField
+            placeholder="이름, 이메일, 태그로 검색..."
+            variant="outlined"
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+                startAdornment: (
+                <InputAdornment position="start">
+                    <SearchIcon />
+                </InputAdornment>
+                ),
+            }}
+          />
+          <Button 
+            variant="contained" 
+            startIcon={<AddIcon />} 
+            onClick={() => setInviteModalOpen(true)}
+            disabled={!isCurrentUserAdmin}
+            sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+          >
+            멤버 초대
+          </Button>
+        </Box>
       </Box>
-
+      
       <TableContainer component={Paper} variant="outlined">
         <Table>
           <TableHead sx={{ bgcolor: 'grey.100' }}>
             <TableRow>
-              <TableCell>사용자 ID</TableCell>
+              {/* ★ 테이블 헤더를 '멤버'로 변경 */}
+              <TableCell>멤버</TableCell>
               <TableCell>권한</TableCell>
               <TableCell>태그</TableCell>
               <TableCell align="right">작업</TableCell>
@@ -270,8 +276,17 @@ const MembersContent = () => {
             ) : (
               filteredMembers.map((member) => (
                 <TableRow key={member.id}>
+                  {/* ★ 멤버 정보를 이름과 이메일로 표시하도록 UI 개선 */}
                   <TableCell>
-                    <Typography variant="body2">{member.userId}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar sx={{ width: 32, height: 32, mr: 1.5, bgcolor: 'primary.light' }}>
+                            <PersonIcon fontSize="small" />
+                        </Avatar>
+                        <Box>
+                            <Typography variant="body2" fontWeight="medium">{member.name}</Typography>
+                            <Typography variant="caption" color="text.secondary">{member.email}</Typography>
+                        </Box>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Chip 
@@ -285,7 +300,7 @@ const MembersContent = () => {
                     <IconButton 
                       size="small" 
                       onClick={(event) => handleMenuOpen(event, member)}
-                      disabled={!isCurrentUserAdmin} // ★ ADMIN이 아니면 더보기 버튼 비활성화
+                      disabled={!isCurrentUserAdmin}
                     >
                       <MoreVertIcon />
                     </IconButton>

@@ -35,7 +35,6 @@ const AcceptInvitationPage = () => {
       }
 
       try {
-        // Swagger 명세에 따라 API를 호출합니다.
         await apiClient.get(`/space-members/${spaceId}/accept`, {
           params: { email },
         });
@@ -43,19 +42,15 @@ const AcceptInvitationPage = () => {
         setStatus('success');
         setAcceptedSpaceId(Number(spaceId));
         
-        // 초대가 수락되었으므로, 최신 스페이스 목록을 다시 불러옵니다.
         await fetchSpaces();
 
-      } catch (error) { // [수정] (error: any) 대신 (error) 사용
+      } catch (error) {
         console.error('초대 수락 실패:', error);
 
-        // [수정] error가 AxiosError인지 확인하여 안전하게 처리
         if (axios.isAxiosError(error)) {
-          // Axios 에러인 경우, 서버에서 보낸 에러 메시지를 사용
           const errorData = error.response?.data as { message?: string };
           setErrorMessage(errorData?.message || '초대 수락 처리 중 오류가 발생했습니다.');
         } else {
-          // Axios 에러가 아닌 경우 (네트워크 오류 등), 일반적인 메시지 표시
           setErrorMessage('알 수 없는 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
         }
         setStatus('error');
@@ -64,16 +59,15 @@ const AcceptInvitationPage = () => {
 
     acceptInvite();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]); // searchParams가 변경될 때 한 번만 실행
+  }, [searchParams]);
 
   const handleGoToSpace = () => {
     if (acceptedSpaceId) {
-      // Zustand 스토어의 currentSpace를 방금 수락한 스페이스로 설정합니다. (선택적)
       const newSpace = useAppStore.getState().spaces.find(s => s.spaceId === acceptedSpaceId);
       if (newSpace) {
         setCurrentSpace(newSpace);
       }
-      navigate(`/spaces/${acceptedSpaceId}/templates`); // 해당 스페이스의 템플릿 페이지로 이동
+      navigate(`/spaces/${acceptedSpaceId}/templates`);
     }
   };
 
