@@ -14,7 +14,6 @@ import {
   GlobalStyles,
 } from '@mui/material';
 import apiClient from '../api';
-// ★ 1. 스낵바를 사용하기 위해 useAppStore를 import 합니다.
 import useAppStore from '../store/useAppStore';
 
 const interactiveTheme = createTheme({
@@ -50,7 +49,6 @@ interface ApiError {
 const InvitedRegisterPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // ★ 2. 스토어에서 showSnackbar 액션을 가져옵니다.
   const { showSnackbar } = useAppStore();
   
   const [email, setEmail] = useState('');
@@ -80,19 +78,15 @@ const InvitedRegisterPage = () => {
     setError(null);
 
     try {
-      await apiClient.post('/user/register', {
+      await apiClient.post('/user/space-member-register?spaceId=' + spaceId, {
         email,
         password,
         name,
         username,
       });
 
-      // ★★★★★ 수정된 최종 흐름 ★★★★★
-      // 1. 더 명확한 의미의 성공 스낵바를 띄웁니다.
       showSnackbar({ message: '회원가입이 완료되었습니다! 로그인하여 새로 참여한 스페이스를 확인해보세요.', severity: 'success' });
       
-      // 2. 로그인 페이지로 이동시킵니다.
-      // 초대 정보를 쿼리 파라미터로 넘겨서, 로그인 후 초대 흐름을 이어갈 수 있도록 합니다.
       navigate(`/login?spaceId=${spaceId}&email=${email}`, { replace: true });
 
     } catch (err: unknown) {
