@@ -2,12 +2,11 @@ import React from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
-// 이 컴포넌트가 받을 props 타입을 정의합니다.
 interface PageLayoutProps {
-  title: string; // 페이지 제목 (예: "연락처", "템플릿")
-  actionButtonText?: string; // 오른쪽 상단 버튼의 텍스트 (예: "새로운 연락처 등록")
-  onActionButtonClick?: () => void; // 버튼 클릭 시 실행될 함수
-  children: React.ReactNode; // 페이지의 실제 컨텐츠 (예: 테이블, 카드 목록 등)
+  title: string;
+  actionButtonText?: string;
+  onActionButtonClick?: () => void;
+  children: React.ReactNode;
 }
 
 const PageLayout: React.FC<PageLayoutProps> = ({
@@ -17,33 +16,44 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   children,
 }) => {
   return (
-    <Box sx={{ p: 3 }}> {/* 페이지 전체에 일관된 여백을 줍니다. */}
-      {/* 페이지 헤더: 제목과 액션 버튼 */}
-      <Stack 
-        direction="row" 
-        justifyContent="space-between" 
-        alignItems="center" 
-        sx={{ mb: 3 }}
-      >
-        <Typography variant="h4" fontWeight="bold">
-          {title}
-        </Typography>
+    // 페이지의 가장 바깥쪽 Box, 전체 높이를 차지하고 스크롤의 기준이 됨
+    <Box sx={{ height: '100%', overflowY: 'auto' }}>
+      
+      {/* 중앙 정렬 및 최대 너비를 담당하는 컨테이너 */}
+      <Box sx={{ maxWidth: '1200px', width: '100%', mx: 'auto', pt: 7 }}>
         
-        {actionButtonText && onActionButtonClick && (
-          <Button 
-            variant="contained" 
-            startIcon={<AddIcon />} 
-            onClick={onActionButtonClick}
-            size="large" // [요청사항] 버튼 크기 통일
-          >
-            {actionButtonText}
-          </Button>
-        )}
-      </Stack>
+        {/* 페이지 헤더: 제목과 액션 버튼 */}
+        <Stack 
+          direction="row" 
+          justifyContent="space-between" 
+          alignItems="center" 
+          sx={{ mb: 4, flexShrink: 0 }}
+        >
+          <Typography variant="h4" fontWeight="bold">
+            {title}
+          </Typography>
+          
+          {actionButtonText && onActionButtonClick && (
+            <Button 
+              variant="contained" 
+              startIcon={<AddIcon />} 
+              onClick={onActionButtonClick}
+              size="large"
+            >
+              {actionButtonText}
+            </Button>
+          )}
+        </Stack>
 
-      {/* 페이지의 실제 컨텐츠가 이 아래에 렌더링됩니다. */}
-      <Box>
-        {children}
+        {/* 
+          [수정 2] 페이지 컨텐츠 영역입니다. 
+          이전에는 이 Box에 overflow 속성이 있었지만, 이제 가장 바깥쪽 Box가 담당합니다.
+          이로써 그림자나 호버 효과가 잘리는 문제가 해결됩니다.
+        */}
+        <Box>
+          {children}
+        </Box>
+
       </Box>
     </Box>
   );

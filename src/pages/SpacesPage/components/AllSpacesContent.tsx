@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import {
-  Box, TextField, InputAdornment, Button, Typography, List, ListItem,
+  Box, TextField, Button, Typography, List, ListItem,
   ListItemAvatar, Avatar, ListItemText, IconButton, Divider, Menu, MenuItem,
   Dialog, DialogActions, DialogContent, DialogTitle, CircularProgress,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CorporateFareIcon from '@mui/icons-material/CorporateFare';
 import apiClient from '../../../api';
 import useAppStore from '../../../store/useAppStore';
 import type { Space } from '../../../store/useAppStore';
+import TableToolbar from '../../../components/common/TableToolbar';
 
 type SortOptionKey = 'name-asc' | 'name-desc';
 const sortOptions: { key: SortOptionKey; label: string }[] = [
@@ -128,19 +127,13 @@ const AllSpacesContent: React.FC<AllSpacesContentProps> = ({ spaces, onAddSpace,
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
-        <TextField
-          variant="outlined"
-          placeholder="스페이스명으로 검색해주세요"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          sx={{ flexGrow: 1, width: '400px', '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-          InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>) }}
-        />
-        <Button variant="contained" startIcon={<AddIcon />} onClick={onAddSpace} sx={{ borderRadius: '8px', py: 1.5, px: 2, fontWeight: 'bold' }}>
-          스페이스 추가하기
-        </Button>
-      </Box>
+      <TableToolbar
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="스페이스명으로 검색해주세요"
+        actionButtonText="스페이스 추가하기"
+        onActionButtonClick={onAddSpace}
+      />
 
       <Box sx={{ border: '1px solid #e0e0e0', borderRadius: '8px', p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, cursor: 'pointer', width: 'fit-content' }} onClick={handleSortMenuOpen}>
