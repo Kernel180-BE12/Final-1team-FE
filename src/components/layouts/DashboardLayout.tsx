@@ -215,7 +215,7 @@ const DashboardLayout = () => {
                         display: 'flex',
                         flexDirection: 'column',
                         height: '100vh',
-                        overflowY: 'auto',
+                        overflowY: 'hidden',
                         backgroundColor: 'transparent'
                     }}
                 >
@@ -225,6 +225,7 @@ const DashboardLayout = () => {
                         sx={{
                             animation: 'fadeIn 0.5s ease-out',
                             flex: 1,
+                            overflow : 'auto'
                         }}
                     >
                         <Outlet />
