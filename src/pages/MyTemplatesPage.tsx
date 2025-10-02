@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box, Typography, Paper, CssBaseline, GlobalStyles, Button, TextField,
-  InputAdornment, CircularProgress,
+  Box, Typography, Paper, CssBaseline, GlobalStyles, Button,
+  CircularProgress,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
 import useAppStore from '../store/useAppStore';
 import apiClient from '../api';
-
-// --- SuggestionPage에서 가져온 헬퍼 컴포넌트 및 타입 ---
+import PageLayout from '../components/layouts/PageLayout';
+import TableToolbar from '../components/common/TableToolbar';
 
 interface StructuredTemplate {
     title: string;
@@ -116,18 +114,15 @@ const IPhoneKakaoPreview = ({ template }: { template: StructuredTemplate }) => {
 
 const MyTemplatesPage = () => {
   const navigate = useNavigate();
-  // ★ 2. 스토어에서 deleteTemplate 액션을 제거합니다.
   const { templates = [], isLoadingTemplates = false, fetchTemplates, currentSpace } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   
-
   useEffect(() => {
     if (currentSpace) {
       fetchTemplates();
     }
   }, [currentSpace, fetchTemplates]);
 
-  // ★ 3. handleDelete 함수가 다시 apiClient를 직접 호출하도록 수정합니다.
   const handleDelete = async (templateIdToDelete: number) => {
     if (currentSpace) {
       if (window.confirm("정말로 이 템플릿을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
@@ -139,10 +134,9 @@ const MyTemplatesPage = () => {
             }
           });
           alert(`템플릿이 삭제되었습니다.`);
-          fetchTemplates(); // 목록 새로고침
+          fetchTemplates();
         } catch (error) {
           console.error('템플릿 삭제 실패:', error);
-          // 전역 에러 핸들러가 사용자에게 실패 알림을 보여줍니다.
         }
       }
     }
@@ -155,7 +149,7 @@ const MyTemplatesPage = () => {
 
   if (isLoadingTemplates) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 64px)' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
         <CircularProgress />
       </Box>
     );
@@ -165,32 +159,19 @@ const MyTemplatesPage = () => {
     <>
       <CssBaseline />
       <GlobalStyles styles={`
-        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css' );
         body { background: linear-gradient(135deg, #f5f7fa, #e9ecef); }
       `} />
 
-        <Box sx={{
-            height: '100%',
-            overflowY: 'auto',
-            p: 4,
-        }}>
-        <Box sx={{ maxWidth: '1200px', mx: 'auto' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Typography variant="h4">내 템플릿 목록</Typography>
-            <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate('../suggestion')}>
-              AI로 새 템플릿 만들기
-            </Button>
-          </Box>
-
-          <TextField
-            fullWidth
-            placeholder="템플릿 제목 또는 내용으로 검색..."
-            variant="outlined"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ mb: 4, '& .MuiOutlinedInput-root': { borderRadius: '16px', backgroundColor: 'rgba(255, 255, 255, 0.7)' } }}
-            InputProps={{ startAdornment: ( <InputAdornment position="start"> <SearchIcon /> </InputAdornment> ), }}
-          />
+      {/* [수정] 기존 레이아웃을 PageLayout으로 교체 */}
+      <PageLayout title="내 템플릿 목록">
+        <TableToolbar
+          searchTerm={searchTerm}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          searchPlaceholder="템플릿 제목 또는 내용으로 검색..."
+          actionButtonText="AI로 새 템플릿 만들기"
+          onActionButtonClick={() => navigate('../suggestion')}
+        />
 
           {filteredTemplates.length === 0 && !isLoadingTemplates ? (
             <Paper sx={{ textAlign: 'center', p: 4, borderRadius: 2, mt: 4 }}>
@@ -274,8 +255,7 @@ const MyTemplatesPage = () => {
             })}
           </Box>
           )}
-        </Box>
-      </Box>
+      </PageLayout>
     </>
   );
 };

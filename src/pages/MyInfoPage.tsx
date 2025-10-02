@@ -114,7 +114,7 @@ const MyInfoPage = () => {
     }
 
     return (
-        <Box sx={{ maxWidth: '700px', mx: 'auto' }}>
+        <Box sx={{ maxWidth: '700px', mx: 'auto', pt: 7 }}>
             <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 4 }}>
                 내 정보
             </Typography>
