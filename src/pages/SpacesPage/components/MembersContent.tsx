@@ -4,17 +4,17 @@ import {
   TableContainer, TableHead, TableRow, CircularProgress, IconButton,
   Menu, MenuItem, ListItemIcon, ListItemText, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField,
-  Alert, Chip, Stack, InputAdornment, Avatar, Checkbox
+  Alert, Chip, Stack, Avatar, Checkbox
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
 import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import useAppStore from '../../../store/useAppStore';
 import type { SpaceMember, NewMemberInvitation } from '../../../store/useAppStore';
+import TableToolbar from '../../../components/common/TableToolbar';
 
 // --- 멤버 초대 모달 컴포넌트 ---
 interface InviteMembersModalProps {
@@ -242,40 +242,24 @@ const MembersContent = () => {
   const isIndeterminate = selectedMemberIds.length > 0 && selectedMemberIds.length < selectableMemberIds.length;
 
   return (
+  
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        {selectedMemberIds.length > 0 && isCurrentUserAdmin ? (
-            <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={handleBulkDelete}>
-                {selectedMemberIds.length}명 삭제
-            </Button>
-        ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <TextField
-                placeholder="이름, 이메일, 태그로 검색..."
-                variant="outlined"
-                size="small"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                    startAdornment: (
-                    <InputAdornment position="start">
-                        <SearchIcon />
-                    </InputAdornment>
-                    ),
-                }}
-            />
-            <Button 
-                variant="contained" 
-                startIcon={<AddIcon />} 
-                onClick={() => setInviteModalOpen(true)}
-                disabled={!isCurrentUserAdmin}
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-            >
-                멤버 초대
-            </Button>
-            </Box>
-        )}
-      </Box>
+      {/* [수정] 기존의 복잡한 Box와 TextField, Button을 TableToolbar로 교체 */}
+      {selectedMemberIds.length > 0 && isCurrentUserAdmin ? (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={handleBulkDelete}>
+              {selectedMemberIds.length}명 삭제
+          </Button>
+        </Box>
+      ) : (
+            <TableToolbar
+          searchTerm={searchTerm}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          searchPlaceholder="이름, 이메일, 태그로 검색..."
+          actionButtonText="멤버 초대"
+          onActionButtonClick={() => setInviteModalOpen(true)}
+        />
+      )}
       
       <TableContainer component={Paper} variant="outlined">
         <Table>
